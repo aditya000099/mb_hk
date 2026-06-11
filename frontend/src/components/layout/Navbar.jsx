@@ -73,7 +73,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-[100] bg-[#0B1416] border-b border-[#2A3236] h-14 flex items-center">
-      <div className="w-full px-5 flex items-center gap-4 justify-between">
+      <div className="w-full px-5 flex items-center gap-80 justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <svg className="w-8 h-8" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -87,7 +87,7 @@ export default function Navbar() {
         </Link>
 
         {/* Search bar wrapper with gradient border */}
-        <div className="flex-1 max-w-[690px] relative" ref={searchRef}>
+        <div className="flex-1 max-w-[600px] relative" ref={searchRef}>
           <div className="relative rounded-full p-[1px] bg-gradient-to-r from-[#FF4500] to-[#FFA500]">
             <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#0B1416] rounded-full h-10 w-full overflow-hidden">
               {/* Snoo Icon */}
@@ -100,7 +100,7 @@ export default function Navbar() {
                   />
                 </svg>
               </div>
-              
+
               <input
                 type="text"
                 className="flex-1 h-full bg-transparent border-none text-sm text-white outline-none placeholder:text-[#82959b]"
@@ -116,7 +116,7 @@ export default function Navbar() {
                 <div className="w-[1px] h-5 bg-[#2A3236] mx-2"></div>
                 <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors text-sm font-bold text-white cursor-pointer">
                   <svg className="w-5 h-5 text-[#FF4500]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
+                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
                   </svg>
                   Ask
                 </button>
@@ -165,15 +165,6 @@ export default function Navbar() {
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {isAuthenticated ? (
             <>
-              {/* Ad/Megaphone */}
-              <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="6" width="18" height="12" rx="2" />
-                  <path d="M7 15V9l4 6V9" />
-                  <path d="M14 9h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-3V9z" />
-                </svg>
-              </button>
-              
               {/* Chat */}
               <button className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -182,9 +173,6 @@ export default function Navbar() {
                   <circle cx="12" cy="10" r="1" fill="currentColor" />
                   <circle cx="16" cy="10" r="1" fill="currentColor" />
                 </svg>
-                <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-[#FF4500] text-white text-[10px] font-bold px-1.5 py-[1px] rounded-full border-2 border-[#0B1416]">
-                  40
-                </span>
               </button>
 
               {/* Create */}
@@ -195,16 +183,13 @@ export default function Navbar() {
                 </svg>
                 <span className="text-sm font-bold">Create</span>
               </Link>
-              
+
               {/* Notifications */}
               <button className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-[#FF4500] text-white text-[10px] font-bold px-1.5 py-[1px] rounded-full border-2 border-[#0B1416]">
-                  3
-                </span>
               </button>
 
               {/* Avatar */}

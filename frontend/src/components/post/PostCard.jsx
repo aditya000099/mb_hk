@@ -21,7 +21,7 @@ export default function PostCard({ post, onVoteUpdate }) {
 
   const handleVote = async (value) => {
     if (!isAuthenticated) { navigate('/login'); return }
-    
+
     let newVote = value;
     let newScore = localScore;
 
@@ -67,8 +67,8 @@ export default function PostCard({ post, onVoteUpdate }) {
   }
 
   return (
-    <div 
-      className="bg-[#0f1113] rounded-2xl mb-3 cursor-pointer relative overflow-hidden transition-colors duration-100 hover:bg-[#151719] p-3 sm:p-4 border border-[#2A3236]" 
+    <div
+      className=" rounded-none mb-3 cursor-pointer relative overflow-hidden transition-colors duration-100 hover:bg-[#151719] p-3 sm:p-4 border-t border-[#2A3236]"
       onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}
     >
       {/* Post Header */}
@@ -86,7 +86,7 @@ export default function PostCard({ post, onVoteUpdate }) {
             <span className="text-[#82959b]">{timeAgo(post.created_at)}</span>
           </div>
         </div>
-        
+
         {/* 3 Dots Options */}
         <button className="text-[#82959b] hover:bg-[#272729] rounded-full p-1" onClick={e => e.stopPropagation()}>
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -105,11 +105,11 @@ export default function PostCard({ post, onVoteUpdate }) {
       {/* Flair */}
       {post.flair_text && (
         <div className="mb-2">
-          <span 
-            className="inline-block py-0.5 px-2 rounded-full text-xs font-bold mb-1" 
-            style={{ 
-              background: post.flair_color || '#FFE500', 
-              color: '#000000' 
+          <span
+            className="inline-block py-0.5 px-2 rounded-full text-xs font-bold mb-1"
+            style={{
+              background: post.flair_color || '#FFE500',
+              color: '#000000'
             }}
           >
             {post.flair_text}
@@ -146,23 +146,23 @@ export default function PostCard({ post, onVoteUpdate }) {
       <div className="flex items-center flex-wrap gap-2 mt-2" onClick={e => e.stopPropagation()}>
         {/* Vote Pill */}
         <div className="flex items-center bg-[#272729] hover:bg-[#343435] rounded-full">
-          <button 
+          <button
             className={`p-2 rounded-l-full flex items-center justify-center transition-colors ${localVote === 1 ? 'text-[#FF4500]' : 'text-[#d7dadc] hover:text-[#FF4500]'}`}
             onClick={(e) => { e.stopPropagation(); handleVote(1); }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <path d="M12 19V5M5 12l7-7 7 7"/>
+              <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
           </button>
           <span className={`text-xs font-bold px-1 ${localVote === 1 ? 'text-[#FF4500]' : localVote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc]'}`}>
             {formatNumber(localScore)}
           </span>
-          <button 
+          <button
             className={`p-2 rounded-r-full flex items-center justify-center transition-colors ${localVote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc] hover:text-[#7193ff]'}`}
             onClick={(e) => { e.stopPropagation(); handleVote(-1); }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <path d="M12 5v14M5 12l7 7 7-7"/>
+              <path d="M12 5v14M5 12l7 7 7-7" />
             </svg>
           </button>
         </div>
@@ -198,7 +198,7 @@ export default function PostCard({ post, onVoteUpdate }) {
         </button>
 
         {/* Save Pill */}
-        <button 
+        <button
           className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors"
           onClick={handleSave}
         >
