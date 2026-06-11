@@ -1,24 +1,48 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import VoteButtons from '../ui/VoteButtons'
 import { timeAgo, formatNumber } from '../../utils/time'
-import { votePost } from '../../api/posts'
+import { votePost, deletePost, editPost } from '../../api/posts'
 import { toggleSavePost } from '../../api/users'
 import useAuthStore from '../../store/authStore'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-export default function PostCard({ post, onVoteUpdate }) {
+export default function PostCard({ post, onVoteUpdate, onDelete }) {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const currentUser = useAuthStore(s => s.user)
+  const queryClient = useQueryClient()
+  const isOwner = currentUser?.id === post.author_id
 
   const [localVote, setLocalVote] = useState(post.user_vote || 0)
   const [localScore, setLocalScore] = useState(post.score || 0)
   const [localSaved, setLocalSaved] = useState(post.is_saved || false)
   const [shareToast, setShareToast] = useState(false)
 
+  // Three-dot menu
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef(null)
+
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editTitle, setEditTitle] = useState(post.title)
+  const [editBody, setEditBody] = useState(post.body || '')
+
+  // Delete confirm
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
   useEffect(() => {
     setLocalVote(post.user_vote || 0)
     setLocalScore(post.score || 0)
-  }, [post.user_vote, post.score])
+    setEditTitle(post.title)
+    setEditBody(post.body || '')
+  }, [post.user_vote, post.score, post.title, post.body])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleVote = async (value) => {
     if (!isAuthenticated) { navigate('/login'); return }
@@ -88,8 +112,30 @@ export default function PostCard({ post, onVoteUpdate }) {
       }
     }
   }
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePost(post.id),
+    onSuccess: () => {
+      setShowDeleteConfirm(false)
+      setShowMenu(false)
+      // Invalidate all feed caches so the post disappears
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['popular'] })
+      if (onDelete) onDelete(post.id)
+    }
+  })
 
-  return (
+  const editMutation = useMutation({
+    mutationFn: () => editPost(post.id, { title: editTitle.trim(), body: editBody }),
+    onSuccess: () => {
+      setShowEditModal(false)
+      setShowMenu(false)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['popular'] })
+    }
+  })
+
     <div
       className="post-card rounded-none mb-3 cursor-pointer relative overflow-hidden transition-colors duration-100 p-3 sm:p-4 border-t border-[#2A3236]"
       onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}
