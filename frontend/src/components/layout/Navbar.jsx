@@ -67,8 +67,22 @@ export default function Navbar() {
   const [showProfile, setShowProfile] = useState(false)
   const profileRef = useRef(null)
 
-  // Display mode toggle (dark = default)
-  const [darkMode, setDarkMode] = useState(true)
+  // Display mode — persisted to localStorage, applied as class on <html>
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved ? saved !== 'light' : true
+  })
+
+  // Apply / remove 'light' class on <html> whenever darkMode changes
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.remove('light')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.add('light')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
 
   const debouncedQuery = useDebounce(searchQuery, 300)
 
@@ -412,7 +426,7 @@ export default function Navbar() {
                         </svg>
                       }
                       label="Drafts"
-                      to="/"
+                      to="/submit"
                       onClick={() => setShowProfile(false)}
                     />
 
@@ -430,7 +444,7 @@ export default function Navbar() {
                         label="Achievements"
                         subtitle="3 unlocked"
                         subtitleColor="text-[#FF4500]"
-                        to="/"
+                        to={`/u/${user?.username}`}
                         onClick={() => setShowProfile(false)}
                       />
                     </div>
@@ -448,7 +462,7 @@ export default function Navbar() {
                       }
                       label="Earn"
                       subtitle="Earn cash on Reddit"
-                      to="/"
+                      to="/r/popular"
                       onClick={() => setShowProfile(false)}
                     />
 
@@ -460,7 +474,7 @@ export default function Navbar() {
                         </svg>
                       }
                       label="Premium"
-                      to="/"
+                      to="/r/popular"
                       onClick={() => setShowProfile(false)}
                     />
 
@@ -484,7 +498,7 @@ export default function Navbar() {
                     {/* ── Log Out ── */}
                     <button
                       className="flex items-center gap-3 w-full px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
-                      onClick={handleLogout}
+                      onClick={() => { setShowProfile(false); handleLogout() }}
                     >
                       <span className="text-[#d7dadc] shrink-0">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -507,13 +521,13 @@ export default function Navbar() {
                         </svg>
                       }
                       label="Advertise on Reddit"
-                      to="/"
+                      to="/submit"
                       onClick={() => setShowProfile(false)}
                     />
 
                     {/* ── Try Reddit Pro ── */}
                     <Link
-                      to="/"
+                      to="/r/popular"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
                       onClick={() => setShowProfile(false)}
                     >
