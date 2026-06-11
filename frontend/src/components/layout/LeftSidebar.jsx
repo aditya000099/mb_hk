@@ -185,7 +185,7 @@ export default function LeftSidebar() {
       <div className="flex flex-col gap-0.5">
         <NavItem to="/" isActive={path === '/'} label="Home" icon={<HomeIcon />} />
         <NavItem to="/r/popular" isActive={path === '/r/popular'} label="Popular" icon={<PopularIcon />} />
-        <NavItem to="/r/news" isActive={path === '/r/news'} label="News" icon={<NewsIcon />} />
+        <NavItem to="/news" isActive={path === '/news'} label="News" icon={<NewsIcon />} />
         <NavItem to="/search" isActive={path === '/search'} label="Explore" icon={<ExploreIcon />} />
         <NavItem to="/subreddits/create" isActive={path === '/subreddits/create'} label="Start a community" icon={<PlusIcon />} />
       </div>

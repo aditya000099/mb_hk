@@ -4,8 +4,8 @@ import useAuthStore from '../../store/authStore'
 import { logout as logoutApi } from '../../api/auth'
 import { searchSubreddits } from '../../api/subreddits'
 import { useLocation } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getUnreadCount } from '../../api/chat'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getUnreadCount, getPendingRequests, toggleFriendRequest } from '../../api/chat'
 import ChatWidget from '../chat/ChatWidget'
 import useChatStore from '../../store/chatStore'
 
@@ -52,11 +52,31 @@ export default function Navbar() {
   
   const searchRef = useRef(null)
 
+  const queryClient = useQueryClient()
+
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unreadCount'],
     queryFn: getUnreadCount,
     enabled: isAuthenticated,
     refetchInterval: 10000,
+  })
+
+  // Pending friend requests — powers the notification bell badge
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ['pendingRequests'],
+    queryFn: getPendingRequests,
+    enabled: isAuthenticated,
+    refetchInterval: 15000,
+  })
+
+  const totalNotifCount = pendingRequests.length
+
+  const acceptFriendMutation = useMutation({
+    mutationFn: (senderId) => toggleFriendRequest(senderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingRequests'] })
+      queryClient.invalidateQueries({ queryKey: ['friends'] })
+    }
   })
 
   // Notifications dropdown
@@ -309,6 +329,11 @@ export default function Navbar() {
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
+                  {totalNotifCount > 0 && (
+                    <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-[#FF4500] text-white text-[9px] font-bold px-1 rounded-full border-2 border-[#0B1416] animate-pulse">
+                      {totalNotifCount > 9 ? '9+' : totalNotifCount}
+                    </span>
+                  )}
                 </button>
 
                 {/* Notifications dropdown */}
@@ -316,28 +341,88 @@ export default function Navbar() {
                   <div className="absolute top-[calc(100%+8px)] right-0 w-[360px] bg-[#0f1113] border border-[#2A3236] rounded-xl shadow-modal z-[200] overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A3236]">
-                      <h3 className="text-sm font-bold text-[#d7dadc]">Notifications</h3>
+                      <h3 className="text-sm font-bold text-[#d7dadc]">
+                        Notifications
+                        {totalNotifCount > 0 && (
+                          <span className="ml-2 bg-[#FF4500] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {totalNotifCount}
+                          </span>
+                        )}
+                      </h3>
                       <button
                         className="text-xs text-[#FF4500] font-bold hover:underline"
                         onClick={() => setShowNotifications(false)}
                       >
-                        Mark all read
+                        Close
                       </button>
                     </div>
 
-                    {/* Empty state */}
-                    <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-                      <div className="w-14 h-14 rounded-full bg-[#1A282D] flex items-center justify-center mb-3">
-                        <svg className="w-7 h-7 text-[#82959b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
+                    {/* Friend Requests Section */}
+                    {pendingRequests.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-[#1A282D] border-b border-[#2A3236]">
+                          <span className="text-[10px] font-bold text-[#82959b] uppercase tracking-wider">Friend Requests</span>
+                        </div>
+                        {pendingRequests.map(req => (
+                          <div key={req.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#2A3236] hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                            {/* Sender avatar */}
+                            <div className="w-10 h-10 rounded-full bg-[#FF4500] flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden">
+                              {req.friend_avatar_url
+                                ? <img src={req.friend_avatar_url} alt="" className="w-full h-full object-cover" />
+                                : req.friend_username?.[0]?.toUpperCase()
+                              }
+                            </div>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-[#d7dadc] truncate">
+                                {req.friend_display_name || req.friend_username}
+                              </p>
+                              <p className="text-xs text-[#82959b]">
+                                u/{req.friend_username} · wants to be friends
+                              </p>
+                            </div>
+                            {/* Accept / Decline */}
+                            <div className="flex gap-1.5 shrink-0">
+                              <button
+                                className="px-2.5 py-1 bg-[#FF4500] text-white text-xs font-bold rounded-full hover:bg-[#e03d00] transition-colors border-none cursor-pointer disabled:opacity-50"
+                                onClick={() => acceptFriendMutation.mutate(req.user_id)}
+                                disabled={acceptFriendMutation.isPending}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                className="px-2.5 py-1 bg-[#272729] text-[#d7dadc] text-xs font-bold rounded-full hover:bg-[#363638] transition-colors border-none cursor-pointer"
+                                onClick={() => {
+                                  // Decline = toggle again (removes pending request on sender side isn't possible from receiver)
+                                  // We mark as accepted then immediately ignored; best UX is to just dismiss locally
+                                  queryClient.setQueryData(['pendingRequests'], (old) =>
+                                    (old || []).filter(r => r.id !== req.id)
+                                  )
+                                }}
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <p className="text-sm font-bold text-[#d7dadc] mb-1">You're all caught up!</p>
-                      <p className="text-xs text-[#82959b] leading-relaxed">
-                        New activity on your posts and comments will show up here.
-                      </p>
-                    </div>
+                    )}
+
+                    {/* Empty state — only if no pending requests */}
+                    {pendingRequests.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                        <div className="w-14 h-14 rounded-full bg-[#1A282D] flex items-center justify-center mb-3">
+                          <svg className="w-7 h-7 text-[#82959b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-bold text-[#d7dadc] mb-1">You're all caught up!</p>
+                        <p className="text-xs text-[#82959b] leading-relaxed">
+                          Friend requests and notifications will appear here.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Footer */}
                     <div className="border-t border-[#2A3236] px-4 py-2.5">
