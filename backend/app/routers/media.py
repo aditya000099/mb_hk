@@ -18,8 +18,8 @@ async def upload_media(file: UploadFile = File(...), current_user: User = Depend
     Simulates S3 media upload by storing the file locally in backend/media/ 
     and returning a static file path.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are allowed.")
+    if not file.content_type.startswith("image/") and not file.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="Only image and video files are allowed.")
     
     ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
     new_filename = f"{uuid.uuid4().hex}.{ext}"

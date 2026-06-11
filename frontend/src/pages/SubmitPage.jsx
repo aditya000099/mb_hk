@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import PageLayout from '../components/layout/PageLayout';
 import { createPost } from '../api/posts';
 import { getPopularSubreddits } from '../api/subreddits';
+import { uploadMedia } from '../api/users';
 
 const TOOLBAR_ICONS = [
   { id: 'img', title: 'Add Image', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> },
@@ -37,6 +38,9 @@ export default function SubmitPage() {
   const [error, setError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
   const textareaRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load draft on mount
   useEffect(() => {
@@ -107,13 +111,11 @@ export default function SubmitPage() {
         newCursorPos = start + newText.length - 4; // place cursor in url
         break;
       case 'img':
-        newText = `![${selectedText || 'Image description'}](https://)`;
-        newCursorPos = start + newText.length - 9; // place cursor in url
-        break;
+        imageInputRef.current?.click();
+        return;
       case 'vid':
-        newText = `[${selectedText || 'Video description'}](https://...video.mp4)`;
-        newCursorPos = start + newText.length - 21; // place cursor in url
-        break;
+        videoInputRef.current?.click();
+        return;
       case 'x2':
         newText = `^${selectedText || 'superscript'}`;
         newCursorPos = start + newText.length;
@@ -136,6 +138,41 @@ export default function SubmitPage() {
       textarea.focus();
       textarea.setSelectionRange(newCursorPos, newCursorPos);
     }, 0);
+  };
+
+  const handleMediaUpload = async (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = await uploadMedia(file);
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = body.substring(start, end);
+
+      let newText = '';
+      if (type === 'image') {
+        newText = `![${selectedText || 'Image description'}](${url})`;
+      } else {
+        newText = `[${selectedText || 'Video description'}](${url})`;
+      }
+
+      const newCursorPos = start + newText.length;
+      setBody(body.substring(0, start) + newText + body.substring(end));
+
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    } catch (error) {
+      console.error('Failed to upload media:', error);
+      alert('Failed to upload media. Please try again.');
+    } finally {
+      setIsUploading(false);
+      e.target.value = ''; // Reset input
+    }
   };
 
   const { data: popularSubs } = useQuery({
@@ -305,6 +342,22 @@ export default function SubmitPage() {
               )
             ))}
           </div>
+
+          {/* Hidden media inputs */}
+          <input 
+            type="file" 
+            ref={imageInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={(e) => handleMediaUpload(e, 'image')} 
+          />
+          <input 
+            type="file" 
+            ref={videoInputRef} 
+            className="hidden" 
+            accept="video/*" 
+            onChange={(e) => handleMediaUpload(e, 'video')} 
+          />
 
           <div className="w-full h-[1px] bg-[#2A3236] mb-4"></div>
 

@@ -6,6 +6,7 @@ import PostCard from '../components/post/PostCard'
 import useAuthStore from '../store/authStore'
 import { getUser, getUserPosts, getUserComments, getSavedItems, updateProfile, uploadMedia } from '../api/users'
 import { toggleFriendRequest, getFriends } from '../api/chat'
+import useChatStore from '../store/chatStore'
 
 export default function UserProfilePage() {
   const { username } = useParams()
@@ -237,16 +238,32 @@ export default function UserProfilePage() {
                       Edit Profile
                     </button>
                   ) : currentUser && (
-                    <button 
-                      onClick={() => friendMutation.mutate()}
-                      disabled={friendMutation.isPending}
-                      className="w-full mt-2 py-1.5 rounded-full bg-[#FF4500] hover:bg-[#e03d00] text-sm font-bold text-white transition-colors disabled:opacity-50"
-                    >
-                      {friendStatus 
-                        ? (friendStatus.status === 'accepted' ? 'Unfriend' : 'Cancel Request / Pending') 
-                        : 'Add Friend'}
-                    </button>
+                    <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={() => friendMutation.mutate()}
+                        disabled={friendMutation.isPending}
+                        className="flex-1 py-1.5 rounded-full bg-[#FF4500] hover:bg-[#e03d00] text-sm font-bold text-white transition-colors disabled:opacity-50"
+                      >
+                        {friendStatus 
+                          ? (friendStatus.status === 'accepted' ? 'Unfriend' : 'Cancel Request / Pending') 
+                          : 'Add Friend'}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          useChatStore.getState().openChat({
+                            id: profile.id,
+                            friend_username: profile.username,
+                            friend_display_name: profile.display_name,
+                            friend_avatar_url: profile.avatar_url
+                          });
+                        }}
+                        className="flex-1 py-1.5 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-white transition-colors"
+                      >
+                        Message
+                      </button>
+                    </div>
                   )}
+
                 </>
               )}
             </div>
