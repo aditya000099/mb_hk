@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.routers.auth import get_current_user
 from app.models.user import User
 from app.models.chat import Friendship, Message
-from app.schemas.chat import FriendshipResponse, MessageCreate, MessageResponse
+from app.schemas.chat import FriendshipResponse, MessageCreate, MessageResponse, InboxResponse
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -174,3 +174,59 @@ async def get_unread_count(
     )
     result = await db.execute(stmt)
     return result.scalar() or 0
+
+
+@router.get("/inbox", response_model=List[InboxResponse])
+async def get_inbox(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Message).where(
+        or_(Message.sender_id == current_user.id, Message.recipient_id == current_user.id)
+    ).order_by(Message.created_at.desc())
+    
+    result = await db.execute(stmt)
+    messages = result.scalars().all()
+    
+    conversations = {}
+    
+    for msg in messages:
+        other_id = msg.recipient_id if msg.sender_id == current_user.id else msg.sender_id
+        if other_id not in conversations:
+            conversations[other_id] = {
+                "latest_message": msg.content,
+                "latest_message_at": msg.created_at,
+                "unread_count": 0
+            }
+        
+        # count unread
+        if msg.recipient_id == current_user.id and not msg.is_read:
+            conversations[other_id]["unread_count"] += 1
+
+    if not conversations:
+        return []
+        
+    users_stmt = select(User).where(User.id.in_(conversations.keys()))
+    users_result = await db.execute(users_stmt)
+    users_dict = {u.id: u for u in users_result.scalars().all()}
+    
+    output = []
+    for other_id, data in conversations.items():
+        user = users_dict.get(other_id)
+        if not user:
+            continue
+        output.append(
+            InboxResponse(
+                friend_id=user.id,
+                friend_username=user.username,
+                friend_display_name=user.display_name,
+                friend_avatar_url=user.avatar_url,
+                latest_message=data["latest_message"],
+                latest_message_at=data["latest_message_at"],
+                unread_count=data["unread_count"],
+            )
+        )
+        
+    # Sort by latest message
+    output.sort(key=lambda x: x.latest_message_at, reverse=True)
+    return output

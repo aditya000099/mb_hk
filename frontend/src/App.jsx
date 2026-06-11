@@ -15,6 +15,10 @@ import MessagesPage from './pages/MessagesPage';
 import SettingsPage from './pages/SettingsPage';
 import './index.css';
 
+import { getMe } from './api/auth';
+import useAuthStore from './store/authStore';
+import { useEffect } from 'react';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -24,10 +28,24 @@ const queryClient = new QueryClient({
   },
 });
 
+function AuthHydrator() {
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const setUser = useAuthStore(s => s.setUser);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getMe().then(user => setUser(user)).catch(() => {});
+    }
+  }, [isAuthenticated, setUser]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <AuthHydrator />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />

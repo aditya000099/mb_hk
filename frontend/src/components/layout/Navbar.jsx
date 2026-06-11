@@ -7,6 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getUnreadCount } from '../../api/chat'
 import ChatWidget from '../chat/ChatWidget'
+import useChatStore from '../../store/chatStore'
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value)
@@ -29,7 +30,9 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
-  const [chatOpen, setChatOpen] = useState(false)
+  
+  const { isOpen: chatOpen, openChat, closeChat } = useChatStore()
+  
   const searchRef = useRef(null)
 
   const { data: unreadCount = 0 } = useQuery({
@@ -231,7 +234,7 @@ export default function Navbar() {
               {/* Chat */}
               <button
                 className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#2A3236] transition-colors cursor-pointer text-white border-none bg-transparent"
-                onClick={() => setChatOpen(!chatOpen)}
+                onClick={() => chatOpen ? closeChat() : openChat()}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -367,7 +370,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
-      {isAuthenticated && <ChatWidget isOpen={chatOpen} onClose={() => setChatOpen(false)} />}
+      {isAuthenticated && <ChatWidget isOpen={chatOpen} onClose={() => closeChat()} />}
     </header>
   )
 }
