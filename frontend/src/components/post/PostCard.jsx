@@ -1,84 +1,186 @@
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import VoteButtons from '../ui/VoteButtons'
 import { timeAgo, formatNumber } from '../../utils/time'
 import { votePost } from '../../api/posts'
 import useAuthStore from '../../store/authStore'
+
 export default function PostCard({ post, onVoteUpdate }) {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
+  const [localVote, setLocalVote] = useState(post.user_vote || 0)
+  const [localScore, setLocalScore] = useState(post.score || 0)
+
+  useEffect(() => {
+    setLocalVote(post.user_vote || 0)
+    setLocalScore(post.score || 0)
+  }, [post.user_vote, post.score])
+
   const handleVote = async (value) => {
     if (!isAuthenticated) { navigate('/login'); return }
-    const result = await votePost(post.id, value)
-    if (onVoteUpdate) onVoteUpdate(post.id, result.score, value)
+    
+    let newVote = value;
+    let newScore = localScore;
+
+    if (localVote === value) {
+      newVote = 0;
+      newScore -= value;
+    } else {
+      if (localVote !== 0) {
+        newScore -= localVote;
+      }
+      newScore += value;
+    }
+
+    setLocalVote(newVote)
+    setLocalScore(newScore)
+
+    try {
+      const result = await votePost(post.id, value)
+      if (result.score !== undefined) {
+        setLocalScore(result.score)
+      }
+      if (result.user_vote !== undefined) {
+        setLocalVote(result.user_vote)
+      }
+      if (onVoteUpdate) onVoteUpdate(post.id, result.score, value)
+    } catch (e) {
+      setLocalVote(post.user_vote || 0)
+      setLocalScore(post.score || 0)
+    }
   }
 
   return (
-    <div className="flex bg-surface border border-border rounded-sm mb-2.5 cursor-pointer relative overflow-hidden transition-colors duration-100 hover:border-[#898989] group/card before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-transparent before:transition-colors before:duration-150 group-hover/card:before:bg-brand" onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}>
-      <div className="w-10 min-w-[40px] bg-surface-raised flex items-start justify-center pt-2 pb-2 px-1 z-10 border-r border-transparent" onClick={e => e.stopPropagation()}>
-        <VoteButtons score={post.score} userVote={post.user_vote} onVote={handleVote} />
-      </div>
-      <div className="flex-1 pt-2 pb-2 pl-2 pr-4 min-w-0 z-10">
-        <div className="flex items-center gap-1 flex-wrap mb-2 text-xs text-text-muted">
-          <Link to={`/r/${post.subreddit_name}`} className="font-bold text-text-primary hover:underline" onClick={e => e.stopPropagation()}>
-            r/{post.subreddit_name}
-          </Link>
-          <span className="text-[10px] mx-0.5">•</span>
-          <span>
-            Posted by{' '}
-            <Link to={`/u/${post.author_username}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-              u/{post.author_username}
+    <div 
+      className="bg-[#0f1113] rounded-2xl mb-3 cursor-pointer relative overflow-hidden transition-colors duration-100 hover:bg-[#151719] p-3 sm:p-4 border border-[#2A3236]" 
+      onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}
+    >
+      {/* Post Header */}
+      <div className="flex justify-between items-center mb-2 z-10">
+        <div className="flex items-center gap-2 text-xs text-[#82959b]">
+          <div className="w-6 h-6 rounded-full bg-[#272729] flex items-center justify-center overflow-hidden shrink-0">
+            {/* Placeholder for Subreddit/User Avatar */}
+            <span className="text-[10px] text-white font-bold">{post.subreddit_name[0]?.toUpperCase()}</span>
+          </div>
+          <div className="flex items-center flex-wrap gap-1">
+            <Link to={`/r/${post.subreddit_name}`} className="font-bold text-[#d7dadc] hover:underline" onClick={e => e.stopPropagation()}>
+              r/{post.subreddit_name}
             </Link>
-          </span>
-          <span className="text-text-muted ml-1">{timeAgo(post.created_at)}</span>
+            <span className="text-[10px] mx-0.5">•</span>
+            <span className="text-[#82959b]">{timeAgo(post.created_at)}</span>
+          </div>
         </div>
-        <h2 className="text-[18px] font-medium text-text-primary leading-[22px] mb-2 break-words">{post.title}</h2>
-        {post.flair_text && (
-          <span className="inline-block py-0.5 px-2 rounded-pill text-xs font-bold text-white mb-2" style={{ background: post.flair_color || 'var(--color-brand)' }}>
+        
+        {/* 3 Dots Options */}
+        <button className="text-[#82959b] hover:bg-[#272729] rounded-full p-1" onClick={e => e.stopPropagation()}>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="19" cy="12" r="2" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Post Title */}
+      <h2 className="text-[18px] sm:text-[20px] font-bold text-[#d7dadc] leading-tight mb-2 break-words">
+        {post.title}
+      </h2>
+
+      {/* Flair */}
+      {post.flair_text && (
+        <div className="mb-2">
+          <span 
+            className="inline-block py-0.5 px-2 rounded-full text-xs font-bold mb-1" 
+            style={{ 
+              background: post.flair_color || '#FFE500', 
+              color: '#000000' 
+            }}
+          >
             {post.flair_text}
           </span>
-        )}
-        {post.image_url && (
-          <img src={post.image_url} alt={post.title} className="w-full max-h-[512px] object-cover rounded mb-2" />
-        )}
-        {post.post_type === 'link' && post.url && (
-          <a
-            href={post.url}
-            className="block text-xs text-text-muted underline break-all mb-2"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
+        </div>
+      )}
+
+      {/* Post Body/Content */}
+      {post.post_type === 'link' && post.url && (
+        <a
+          href={post.url}
+          className="block text-sm text-[#8ca4e6] hover:underline break-all mb-3"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+        >
+          {post.url}
+        </a>
+      )}
+
+      {post.image_url && (
+        <div className="mb-3 rounded-xl overflow-hidden bg-black max-h-[512px] flex items-center justify-center">
+          <img src={post.image_url} alt={post.title} className="max-w-full max-h-[512px] object-contain" />
+        </div>
+      )}
+
+      {post.body && (
+        <div className="text-sm text-[#82959b] leading-relaxed mb-3 line-clamp-4 break-words">
+          {post.body}
+        </div>
+      )}
+
+      {/* Action Bar */}
+      <div className="flex items-center flex-wrap gap-2 mt-2" onClick={e => e.stopPropagation()}>
+        {/* Vote Pill */}
+        <div className="flex items-center bg-[#272729] hover:bg-[#343435] rounded-full">
+          <button 
+            className={`p-2 rounded-l-full flex items-center justify-center transition-colors ${localVote === 1 ? 'text-[#FF4500]' : 'text-[#d7dadc] hover:text-[#FF4500]'}`}
+            onClick={(e) => { e.stopPropagation(); handleVote(1); }}
           >
-            {post.url}
-          </a>
-        )}
-        <div className="flex items-center flex-wrap gap-1 mt-1" onClick={e => e.stopPropagation()}>
-          <button
-            className="flex items-center gap-1.5 py-1.5 px-2 rounded-sm bg-transparent border-none text-xs font-bold text-text-muted cursor-pointer transition-colors duration-100 hover:bg-hover hover:text-text-primary"
-            onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
+          </button>
+          <span className={`text-xs font-bold px-1 ${localVote === 1 ? 'text-[#FF4500]' : localVote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc]'}`}>
+            {formatNumber(localScore)}
+          </span>
+          <button 
+            className={`p-2 rounded-r-full flex items-center justify-center transition-colors ${localVote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc] hover:text-[#7193ff]'}`}
+            onClick={(e) => { e.stopPropagation(); handleVote(-1); }}
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path
-                fillRule="evenodd"
-                d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
-                clipRule="evenodd"
-              />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M12 5v14M5 12l7 7 7-7"/>
             </svg>
-            {formatNumber(post.comment_count)} Comments
-          </button>
-          <button className="flex items-center gap-1.5 py-1.5 px-2 rounded-sm bg-transparent border-none text-xs font-bold text-text-muted cursor-pointer transition-colors duration-100 hover:bg-hover hover:text-text-primary">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-            </svg>
-            Share
-          </button>
-          <button className="flex items-center gap-1.5 py-1.5 px-2 rounded-sm bg-transparent border-none text-xs font-bold text-text-muted cursor-pointer transition-colors duration-100 hover:bg-hover hover:text-text-primary">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-            </svg>
-            Save
           </button>
         </div>
+
+        {/* Comment Pill */}
+        <button
+          className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors"
+          onClick={() => navigate(`/r/${post.subreddit_name}/comments/${post.id}`)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2v4l4-4h8z"></path>
+          </svg>
+          {formatNumber(post.comment_count)}
+        </button>
+
+        {/* Award Pill */}
+        <button className="flex items-center gap-1.5 p-2 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <circle cx="12" cy="8" r="6"></circle>
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+          </svg>
+        </button>
+
+        {/* Share Pill */}
+        <button className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+          </svg>
+          Share
+        </button>
       </div>
     </div>
   )
