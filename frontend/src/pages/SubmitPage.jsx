@@ -6,24 +6,25 @@ import { createPost } from '../api/posts';
 import { getPopularSubreddits } from '../api/subreddits';
 
 const TOOLBAR_ICONS = [
-  { id: 'img', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> },
-  { id: 'vid', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> },
-  { id: 'link', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> },
+  { id: 'img', title: 'Add Image', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> },
+  { id: 'vid', title: 'Add Video', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> },
+  { id: 'link', title: 'Add Link', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> },
   { isSeparator: true },
-  { id: 'bold', icon: <strong className="text-lg font-serif px-1 leading-none">B</strong> },
-  { id: 'italic', icon: <em className="text-lg font-serif px-1 leading-none italic">i</em> },
-  { id: 'strike', icon: <strike className="text-lg font-serif px-1 leading-none">S</strike> },
-  { id: 'x2', icon: <span className="text-sm font-serif px-1 leading-none font-bold">X²</span> },
-  { id: 'heading', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg> },
+  { id: 'bold', title: 'Bold', icon: <strong className="text-lg font-serif px-1 leading-none">B</strong> },
+  { id: 'italic', title: 'Italic', icon: <em className="text-lg font-serif px-1 leading-none italic">i</em> },
+  { id: 'strike', title: 'Strikethrough', icon: <strike className="text-lg font-serif px-1 leading-none">S</strike> },
+  { id: 'x2', title: 'Superscript', icon: <span className="text-sm font-serif px-1 leading-none font-bold">X²</span> },
+  { id: 'heading', title: 'Heading', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg> },
   { isSeparator: true },
-  { id: 'link2', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> },
-  { id: 'ul', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> },
-  { id: 'ol', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><line x1="4" y1="6" x2="4.01" y2="6"></line><line x1="4" y1="12" x2="4.01" y2="12"></line><line x1="4" y1="18" x2="4.01" y2="18"></line></svg> },
+  { id: 'link2', title: 'Add Link', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> },
+  { id: 'ul', title: 'Bulleted List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> },
+  { id: 'ol', title: 'Numbered List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><line x1="4" y1="6" x2="4.01" y2="6"></line><line x1="4" y1="12" x2="4.01" y2="12"></line><line x1="4" y1="18" x2="4.01" y2="18"></line></svg> },
   { isSeparator: true },
-  { id: 'quote', icon: <span className="text-xl font-serif px-1 leading-none">"</span> },
-  { id: 'code', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> },
+  { id: 'quote', title: 'Quote Block', icon: <span className="text-xl font-serif px-1 leading-none">"</span> },
+  { id: 'code', title: 'Code Block', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> },
+  { id: 'table', title: 'Table', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg> },
   { isSpacer: true },
-  { id: 'dots', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 ml-auto"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg> },
+  { id: 'dots', title: 'More Options', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 ml-auto"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg> },
 ];
 
 export default function SubmitPage() {
@@ -105,6 +106,25 @@ export default function SubmitPage() {
         newText = `[${selectedText || 'text'}](url)`;
         newCursorPos = start + newText.length - 4; // place cursor in url
         break;
+      case 'img':
+        newText = `![${selectedText || 'Image description'}](https://)`;
+        newCursorPos = start + newText.length - 9; // place cursor in url
+        break;
+      case 'vid':
+        newText = `[${selectedText || 'Video description'}](https://...video.mp4)`;
+        newCursorPos = start + newText.length - 21; // place cursor in url
+        break;
+      case 'x2':
+        newText = `^${selectedText || 'superscript'}`;
+        newCursorPos = start + newText.length;
+        break;
+      case 'table':
+        newText = `\n| Column 1 | Column 2 |\n| -------- | -------- |\n| ${selectedText || 'Cell 1'}   | Cell 2   |\n`;
+        newCursorPos = start + newText.length - 12; // place cursor roughly at Cell 2
+        break;
+      case 'dots':
+        // Just mock dots button logic
+        return;
       default:
         return;
     }
@@ -278,7 +298,7 @@ export default function SubmitPage() {
                   type="button"
                   className="hover:bg-[#272729] rounded p-1 transition-colors flex items-center justify-center bg-transparent border-none cursor-pointer"
                   onClick={() => handleFormat(item.id)}
-                  title={item.id}
+                  title={item.title || item.id}
                 >
                   {item.icon}
                 </button>
