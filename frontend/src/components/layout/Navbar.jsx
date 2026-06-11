@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import { logout as logoutApi } from '../../api/auth'
@@ -17,15 +17,20 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const navigate = useNavigate()
 
+  // Search state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searchFocused, setSearchFocused] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const searchRef = useRef(null)
 
+  // Notifications dropdown
+  const [showNotifications, setShowNotifications] = useState(false)
+  const notifRef = useRef(null)
+
   const debouncedQuery = useDebounce(searchQuery, 300)
 
-  // Fetch search results when debounced query changes
+  // Fetch subreddit suggestions when typing
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setSearchResults([])
@@ -33,18 +38,19 @@ export default function Navbar() {
     }
     setSearchLoading(true)
     searchSubreddits(debouncedQuery)
-      .then(data => {
-        setSearchResults(Array.isArray(data) ? data.slice(0, 8) : [])
-      })
+      .then(data => setSearchResults(Array.isArray(data) ? data.slice(0, 8) : []))
       .catch(() => setSearchResults([]))
       .finally(() => setSearchLoading(false))
   }, [debouncedQuery])
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setSearchFocused(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -52,20 +58,31 @@ export default function Navbar() {
   }, [])
 
   const handleLogout = async () => {
-    try {
-      await logoutApi()
-    } catch {
-      // even if API fails, clear local state
-    }
+    try { await logoutApi() } catch { /* clear local state anyway */ }
     logout()
     navigate('/login')
   }
 
+  // Submit search → go to SearchPage
   const handleSearchSubmit = (e) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    const q = searchQuery.trim()
+    if (q) {
+      navigate(`/search?q=${encodeURIComponent(q)}`)
       setSearchFocused(false)
+      setSearchQuery('')
+    }
+  }
+
+  // Ask button → submit search or focus input
+  const handleAsk = () => {
+    const q = searchQuery.trim()
+    if (q) {
+      navigate(`/search?q=${encodeURIComponent(q)}`)
+      setSearchFocused(false)
+      setSearchQuery('')
+    } else {
+      searchRef.current?.querySelector('input')?.focus()
     }
   }
 
@@ -74,6 +91,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-[100] bg-[#0B1416] border-b border-[#2A3236] h-14 flex items-center">
       <div className="w-full px-5 flex items-center gap-80 justify-between">
+
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <svg className="w-8 h-8" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -86,11 +104,11 @@ export default function Navbar() {
           <span className="text-xl font-bold text-white tracking-tight">reddit</span>
         </Link>
 
-        {/* Search bar wrapper with gradient border */}
+        {/* Search bar */}
         <div className="flex-1 max-w-[600px] relative" ref={searchRef}>
           <div className="relative rounded-full p-[1px] bg-gradient-to-r from-[#FF4500] to-[#FFA500]">
             <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#0B1416] rounded-full h-10 w-full overflow-hidden">
-              {/* Snoo Icon */}
+              {/* Snoo icon */}
               <div className="pl-3 pr-2 flex items-center justify-center">
                 <svg className="w-6 h-6" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="10" cy="10" r="10" fill="#FF4500" />
@@ -111,12 +129,16 @@ export default function Navbar() {
                 autoComplete="off"
               />
 
-              {/* Divider and Ask button */}
+              {/* Divider + Ask button */}
               <div className="flex items-center pr-1">
-                <div className="w-[1px] h-5 bg-[#2A3236] mx-2"></div>
-                <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors text-sm font-bold text-white cursor-pointer">
+                <div className="w-[1px] h-5 bg-[#2A3236] mx-2" />
+                <button
+                  type="button"
+                  onClick={handleAsk}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors text-sm font-bold text-white cursor-pointer"
+                >
                   <svg className="w-5 h-5 text-[#FF4500]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
                   </svg>
                   Ask
                 </button>
@@ -124,14 +146,16 @@ export default function Navbar() {
             </form>
           </div>
 
-          {/* Search dropdown */}
+          {/* Search suggestions dropdown */}
           {showDropdown && (
             <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#0f1113] border border-[#2A3236] rounded-lg shadow-modal z-[200] overflow-hidden">
               {searchLoading && (
                 <div className="p-4 text-sm text-[#82959b] text-center">Searching...</div>
               )}
               {!searchLoading && searchResults.length === 0 && searchQuery.length >= 2 && (
-                <div className="p-4 text-sm text-[#82959b] text-center">No communities found for "{searchQuery}"</div>
+                <div className="p-4 text-sm text-[#82959b] text-center">
+                  No communities found — press Enter to search all of Reddit
+                </div>
               )}
               {searchResults.map(sub => (
                 <Link
@@ -150,30 +174,58 @@ export default function Navbar() {
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-bold text-white truncate">r/{sub.name}</span>
                     {sub.member_count != null && (
-                      <span className="text-xs text-[#82959b]">
-                        {sub.member_count.toLocaleString()} members
-                      </span>
+                      <span className="text-xs text-[#82959b]">{sub.member_count.toLocaleString()} members</span>
                     )}
                   </div>
                 </Link>
               ))}
+              {/* View all results link */}
+              {searchQuery.trim().length >= 2 && (
+                <button
+                  className="w-full text-left px-3 py-3 text-sm text-[#FF4500] font-bold hover:bg-[rgba(255,255,255,0.05)] transition-colors border-t border-[#2A3236]"
+                  onClick={() => {
+                    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+                    setSearchFocused(false)
+                    setSearchQuery('')
+                  }}
+                >
+                  Search for "{searchQuery.trim()}" →
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Auth section / Icons */}
+        {/* Right icons */}
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {isAuthenticated ? (
             <>
-              {/* Chat */}
-              <button className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
+              {/* Advertise / Create Post shortcut */}
+              <Link
+                to="/submit"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white"
+                title="Create a post"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="6" width="18" height="12" rx="2" />
+                  <path d="M7 15V9l4 6V9" />
+                  <path d="M14 9h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-3V9z" />
+                </svg>
+              </Link>
+
+              {/* Messages / Chat */}
+              <Link
+                to="/messages"
+                className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white"
+                title="Messages"
+              >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   <circle cx="8" cy="10" r="1" fill="currentColor" />
                   <circle cx="12" cy="10" r="1" fill="currentColor" />
                   <circle cx="16" cy="10" r="1" fill="currentColor" />
                 </svg>
-              </button>
+              </Link>
 
               {/* Create */}
               <Link to="/submit" className="flex items-center gap-1.5 px-3 h-10 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
@@ -185,14 +237,61 @@ export default function Navbar() {
               </Link>
 
               {/* Notifications */}
-              <button className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-              </button>
+              <div className="relative" ref={notifRef}>
+                <button
+                  className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white"
+                  title="Notifications"
+                  onClick={() => setShowNotifications(p => !p)}
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </button>
 
-              {/* Avatar */}
+                {/* Notifications dropdown */}
+                {showNotifications && (
+                  <div className="absolute top-[calc(100%+8px)] right-0 w-[360px] bg-[#0f1113] border border-[#2A3236] rounded-xl shadow-modal z-[200] overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A3236]">
+                      <h3 className="text-sm font-bold text-[#d7dadc]">Notifications</h3>
+                      <button
+                        className="text-xs text-[#FF4500] font-bold hover:underline"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        Mark all read
+                      </button>
+                    </div>
+
+                    {/* Empty state */}
+                    <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                      <div className="w-14 h-14 rounded-full bg-[#1A282D] flex items-center justify-center mb-3">
+                        <svg className="w-7 h-7 text-[#82959b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                      </div>
+                      <p className="text-sm font-bold text-[#d7dadc] mb-1">You're all caught up!</p>
+                      <p className="text-xs text-[#82959b] leading-relaxed">
+                        New activity on your posts and comments will show up here.
+                      </p>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="border-t border-[#2A3236] px-4 py-2.5">
+                      <Link
+                        to="/messages"
+                        className="text-xs text-[#FF4500] font-bold hover:underline"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        View all messages →
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Avatar + Dropdown */}
               <div className="relative group ml-1">
                 <button className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1A282D] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border border-transparent group-hover:border-[#2A3236]">
                   {user?.avatar_url ? (
@@ -207,18 +306,31 @@ export default function Navbar() {
                     </svg>
                   )}
                 </button>
-                <div className="hidden group-hover:block absolute top-[calc(100%+8px)] right-0 bg-[#0f1113] border border-[#2A3236] rounded-md shadow-modal z-[200] overflow-hidden min-w-[180px]">
-                  <Link to={`/u/${user?.username}`} className="block w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
+                <div className="hidden group-hover:block absolute top-[calc(100%+8px)] right-0 bg-[#0f1113] border border-[#2A3236] rounded-md shadow-modal z-[200] overflow-hidden min-w-[200px]">
+                  {/* User info */}
+                  <div className="px-4 py-3 border-b border-[#2A3236]">
+                    <p className="text-sm font-bold text-white truncate">u/{user?.username}</p>
+                    <p className="text-xs text-[#82959b] mt-0.5">
+                      {((user?.post_karma || 0) + (user?.comment_karma || 0)).toLocaleString()} karma
+                    </p>
+                  </div>
+                  <Link to={`/u/${user?.username}`} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
                     👤 Profile
                   </Link>
-                  <Link to="/subreddits/create" className="block w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
+                  <Link to="/messages" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
+                    ✉️ Messages
+                  </Link>
+                  <Link to="/subreddits/create" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
                     🏘️ Create Community
                   </Link>
-                  <Link to="/settings" className="block w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
+                  <Link to="/settings" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
                     ⚙️ Settings
                   </Link>
                   <div className="h-[1px] bg-[#2A3236] my-1" />
-                  <button className="block w-full px-4 py-2.5 text-sm text-[#d93025] text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]" onClick={handleLogout}>
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#d93025] text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]"
+                    onClick={handleLogout}
+                  >
                     🚪 Log Out
                   </button>
                 </div>

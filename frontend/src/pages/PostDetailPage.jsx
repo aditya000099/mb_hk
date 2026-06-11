@@ -1,16 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import PageLayout from '../components/layout/PageLayout'
 import VoteButtons from '../components/ui/VoteButtons'
 import CommentBox from '../components/comment/CommentBox'
 import CommentThread from '../components/comment/CommentThread'
-import { getPost, votePost } from '../api/posts'
+import { getPost, votePost, editPost } from '../api/posts'
 import { getComments, createComment } from '../api/comments'
 import { toggleSavePost } from '../api/users'
 import useAuthStore from '../store/authStore'
 import { timeAgo, formatNumber } from '../utils/time'
-import { useEffect } from 'react'
 const COMMENT_SORTS = [
   { value: 'best', label: 'Best' },
   { value: 'top', label: 'Top' },
@@ -23,9 +22,14 @@ const COMMENT_SORTS = [
 export default function PostDetailPage() {
   const { name, postId } = useParams()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const currentUser = useAuthStore(s => s.user)
   const [commentSort, setCommentSort] = useState('best')
   const queryClient = useQueryClient()
   const [localSaved, setLocalSaved] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editBody, setEditBody] = useState('')
+  const [shareToast, setShareToast] = useState(false)
 
   const { data: post, isLoading: postLoading, isError: postError } = useQuery({
     queryKey: ['post', postId],
@@ -50,6 +54,20 @@ export default function PostDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] })
     },
   })
+
+  const editMutation = useMutation({
+    mutationFn: ({ title, body }) => editPost(postId, { title, body }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['post', postId], updated)
+      setIsEditing(false)
+    },
+  })
+
+  const startEdit = () => {
+    setEditTitle(post?.title || '')
+    setEditBody(post?.body || '')
+    setIsEditing(true)
+  }
 
   const handleVote = async (value) => {
     if (!isAuthenticated) return // Could also redirect to login if we import useNavigate
@@ -88,13 +106,34 @@ export default function PostDetailPage() {
 
   const handleSave = async (e) => {
     e.stopPropagation()
-    if (!isAuthenticated) return // redirect or ignore
+    if (!isAuthenticated) return
     const newSaved = !localSaved
     setLocalSaved(newSaved)
     try {
       await toggleSavePost(postId)
     } catch (err) {
       setLocalSaved(!newSaved)
+    }
+  }
+
+  const handleShare = async () => {
+    const url = window.location.href
+    try {
+      if (navigator.share && window.innerWidth < 768) {
+        await navigator.share({ title: post?.title || 'Reddit post', url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setShareToast(true)
+        setTimeout(() => setShareToast(false), 2000)
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url)
+        setShareToast(true)
+        setTimeout(() => setShareToast(false), 2000)
+      } catch {
+        window.prompt('Copy this link:', url)
+      }
     }
   }
 
@@ -151,10 +190,49 @@ export default function PostDetailPage() {
             </button>
           </div>
 
-          {/* Post Title */}
-          <h1 className="text-[22px] sm:text-[24px] font-bold text-[#d7dadc] leading-[1.3] mb-3 break-words">
-            {post.title}
-          </h1>
+          {/* Post Title / Edit mode */}
+          {isEditing ? (
+            <div className="mb-4">
+              <textarea
+                className="w-full p-2 bg-[#1A282D] border border-[#2A3236] rounded text-lg font-bold text-[#d7dadc] resize-none outline-none focus:border-[#FF4500] mb-2"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                maxLength={300}
+                rows={2}
+              />
+              {post.post_type === 'text' && (
+                <textarea
+                  className="w-full p-2 bg-[#1A282D] border border-[#2A3236] rounded text-sm text-[#d7dadc] resize-y outline-none focus:border-[#FF4500] min-h-[100px]"
+                  value={editBody}
+                  onChange={e => setEditBody(e.target.value)}
+                  maxLength={40000}
+                  placeholder="Body (optional)"
+                />
+              )}
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="px-4 py-1.5 rounded-full bg-[#FF4500] text-white text-sm font-bold hover:bg-[#e03d00] transition-colors disabled:opacity-50"
+                  onClick={() => editMutation.mutate({ title: editTitle, body: editBody })}
+                  disabled={editMutation.isPending || !editTitle.trim()}
+                >
+                  {editMutation.isPending ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  className="px-4 py-1.5 rounded-full bg-[#272729] text-[#d7dadc] text-sm font-bold hover:bg-[#343435] transition-colors"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+              {editMutation.isError && (
+                <p className="text-xs text-red-400 mt-1">Failed to save. Please try again.</p>
+              )}
+            </div>
+          ) : (
+            <h1 className="text-[22px] sm:text-[24px] font-bold text-[#d7dadc] leading-[1.3] mb-3 break-words">
+              {post.title}
+            </h1>
+          )}
 
           {/* Flair */}
           {post.flair_text && (
@@ -237,14 +315,24 @@ export default function PostDetailPage() {
             </button>
 
             {/* Share Pill */}
-            <button className="flex items-center gap-1.5 py-2 px-4 sm:py-2.5 sm:px-4 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-[#d7dadc] transition-colors">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                <polyline points="16 6 12 2 8 6"></polyline>
-                <line x1="12" y1="2" x2="12" y2="15"></line>
-              </svg>
-              Share
-            </button>
+            <div className="relative">
+              <button
+                className="flex items-center gap-1.5 py-2 px-4 sm:py-2.5 sm:px-4 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-[#d7dadc] transition-colors"
+                onClick={handleShare}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                  <polyline points="16 6 12 2 8 6"></polyline>
+                  <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+                Share
+              </button>
+              {shareToast && (
+                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-[#272729] text-[#d7dadc] text-xs rounded-md whitespace-nowrap shadow-lg z-10">
+                  ✓ Link copied!
+                </div>
+              )}
+            </div>
 
             {/* Save Pill */}
             <button
@@ -256,6 +344,20 @@ export default function PostDetailPage() {
               </svg>
               {localSaved ? 'Saved' : 'Save'}
             </button>
+
+            {/* Edit Post — own posts only */}
+            {isAuthenticated && currentUser?.id === post.author_id && !post.is_locked && (
+              <button
+                className="flex items-center gap-1.5 py-2 px-4 sm:py-2.5 sm:px-4 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-[#d7dadc] transition-colors"
+                onClick={startEdit}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </button>
+            )}
           </div>
         </div>
 

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_tables
 from app.core.redis import init_redis, close_redis
-from app.routers import auth, health, subreddits, posts, comments, users, media
+from app.routers import auth, health, subreddits, posts, comments, users, media, search
 from fastapi.staticfiles import StaticFiles
 
 
@@ -51,6 +51,7 @@ app.include_router(posts.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(media.router, prefix="/api")
+app.include_router(search.router, prefix="/api")
 
 # Mount media folder
 app.mount("/media", StaticFiles(directory="media"), name="media")

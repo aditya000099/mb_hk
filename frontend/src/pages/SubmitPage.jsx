@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import PageLayout from '../components/layout/PageLayout'
 import { createPost } from '../api/posts'
 import { getSubreddit, getPopularSubreddits } from '../api/subreddits'
+import { uploadMedia } from '../api/users'
 const TABS = [
   { id: 'text', label: '📝 Post' },
   { id: 'image', label: '🖼️ Images & Video' },
@@ -19,7 +20,11 @@ export default function SubmitPage() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [url, setUrl] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [imagePreview, setImagePreview] = useState('')
+  const [imageUploading, setImageUploading] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef(null)
 
   const { data: popularSubs } = useQuery({
     queryKey: ['popular-subreddits'],
@@ -62,8 +67,39 @@ export default function SubmitPage() {
       if (!url.trim()) { setError('Please add a URL.'); return }
       data.url = url.trim()
     }
+    if (activeTab === 'image') {
+      if (!imageUrl) { setError('Please upload an image first.'); return }
+      data.image_url = imageUrl
+    }
 
     submitMutation.mutate(data)
+  }
+
+  const handleImageSelect = async (file) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Only image files are allowed.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be smaller than 10 MB.')
+      return
+    }
+    setError('')
+    setImageUploading(true)
+    // Show local preview immediately
+    const reader = new FileReader()
+    reader.onload = (e) => setImagePreview(e.target.result)
+    reader.readAsDataURL(file)
+    try {
+      const url = await uploadMedia(file)
+      setImageUrl(url)
+    } catch (err) {
+      setError(err?.response?.data?.detail || 'Image upload failed. Please try again.')
+      setImagePreview('')
+    } finally {
+      setImageUploading(false)
+    }
   }
 
   return (
@@ -141,8 +177,61 @@ export default function SubmitPage() {
           )}
 
           {activeTab === 'image' && (
-            <div className="h-[120px] bg-surface-raised border-2 border-dashed border-border rounded-sm flex items-center justify-center text-text-muted text-sm flex-col relative">
-              <p>Image & video upload coming soon.</p>
+            <div
+              className="border-2 border-dashed border-[#2A3236] rounded-sm bg-[#0a0d0f] flex flex-col items-center justify-center min-h-[180px] relative cursor-pointer transition-colors hover:border-[#FF4500]"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#FF4500' }}
+              onDragLeave={e => e.currentTarget.style.borderColor = ''}
+              onDrop={e => {
+                e.preventDefault()
+                e.currentTarget.style.borderColor = ''
+                const file = e.dataTransfer.files[0]
+                if (file) handleImageSelect(file)
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => handleImageSelect(e.target.files[0])}
+              />
+              {imagePreview ? (
+                <div className="relative w-full">
+                  <img src={imagePreview} alt="preview" className="max-h-[300px] w-full object-contain rounded" />
+                  {imageUploading && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded">
+                      <div className="w-8 h-8 border-2 border-[#FF4500] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {!imageUploading && imageUrl && (
+                    <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                      ✓ Uploaded
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full hover:bg-black/80 transition-colors"
+                    onClick={e => { e.stopPropagation(); setImagePreview(''); setImageUrl('') }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-8 text-[#82959b]">
+                  {imageUploading ? (
+                    <div className="w-8 h-8 border-2 border-[#FF4500] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-10 h-10 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  )}
+                  <p className="text-sm font-medium">{imageUploading ? 'Uploading...' : 'Drag & drop or click to upload'}</p>
+                  <p className="text-xs">PNG, JPG, GIF, WebP — max 10 MB</p>
+                </div>
+              )}
             </div>
           )}
 

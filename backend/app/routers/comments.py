@@ -18,7 +18,7 @@ from app.models.user import User
 from app.models.user_profile import SavedComment
 from app.routers.auth import get_current_user
 from app.routers.subreddits import optional_current_user
-from app.schemas.comment import CommentCreate, CommentOut
+from app.schemas.comment import CommentCreate, CommentOut, CommentUpdate
 
 router = APIRouter(tags=["comments"])
 
@@ -233,6 +233,34 @@ async def delete_comment(
     await db.commit()
 
 
+@router.put("/comments/{comment_id}", response_model=CommentOut)
+async def edit_comment(
+    comment_id: str,
+    payload: CommentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Edit a comment's body. Only the author can edit."""
+    comment = await _get_comment_or_404(comment_id, db)
+
+    if comment.author_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    body = payload.body.strip()
+    if not body:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Comment body cannot be empty")
+
+    comment.body = body
+    await db.commit()
+    await db.refresh(comment)
+
+    out = CommentOut.model_validate(comment)
+    out.author_username = current_user.username
+    user_vote = await _get_user_vote_for_comment(current_user.id, comment_id, db)
+    out.user_vote = user_vote
+    return out
+
+
 @router.post("/comments/{comment_id}/vote", response_model=dict)
 async def vote_comment(
     comment_id: str,
@@ -289,6 +317,26 @@ async def vote_comment(
             comment.upvotes = max(0, comment.upvotes - 1)
 
     comment.score = comment.upvotes - comment.downvotes
+
+    # --- Comment Karma tracking (skip self-votes) ---
+    karma_delta = 0
+    old_vote_value = existing_vote.value if existing_vote else 0
+
+    if vote_in.value == 0:
+        karma_delta = -old_vote_value
+    elif old_vote_value == 0:
+        karma_delta = vote_in.value
+    elif old_vote_value == vote_in.value:
+        karma_delta = -vote_in.value
+    else:
+        karma_delta = vote_in.value - old_vote_value
+
+    if karma_delta != 0 and comment.author_id and comment.author_id != current_user.id:
+        author_result = await db.execute(select(User).where(User.id == comment.author_id))
+        author = author_result.scalar_one_or_none()
+        if author:
+            author.comment_karma = max(0, author.comment_karma + karma_delta)
+
     await db.commit()
     await db.refresh(comment)
 

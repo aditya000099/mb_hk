@@ -20,7 +20,7 @@ from app.models.comment import Comment  # noqa: F401 — needed for relationship
 from app.models.user_profile import SavedPost
 from app.routers.auth import get_current_user
 from app.routers.subreddits import optional_current_user
-from app.schemas.post import PostCreate, PostOut, VoteIn, VoteResponse
+from app.schemas.post import PostCreate, PostOut, PostUpdate, VoteIn, VoteResponse
 
 router = APIRouter(tags=["posts"])
 
@@ -49,7 +49,7 @@ async def _get_user_vote_for_post(user_id: str, post_id: str, db: AsyncSession) 
 
 
 async def _enrich_post(post: Post, db: AsyncSession, current_user: Optional[User] = None) -> PostOut:
-    """Load author username, subreddit name, and user_vote."""
+    """Load author username, subreddit name, user_vote, and is_saved."""
     author_username = None
     if post.author_id:
         r = await db.execute(select(User.username).where(User.id == post.author_id))
@@ -59,13 +59,22 @@ async def _enrich_post(post: Post, db: AsyncSession, current_user: Optional[User
     subreddit_name = r.scalar_one_or_none()
 
     user_vote = None
+    is_saved = False
     if current_user:
         user_vote = await _get_user_vote_for_post(current_user.id, post.id, db)
+        saved_result = await db.execute(
+            select(SavedPost).where(
+                SavedPost.user_id == current_user.id,
+                SavedPost.post_id == post.id,
+            )
+        )
+        is_saved = saved_result.scalar_one_or_none() is not None
 
     out = PostOut.model_validate(post)
     out.author_username = author_username
     out.subreddit_name = subreddit_name
     out.user_vote = user_vote
+    out.is_saved = is_saved
     return out
 
 
@@ -135,18 +144,31 @@ async def create_post(
     if not sub:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subreddit not found")
 
-    # Must be a member
+    # Membership check
     member_result = await db.execute(
         select(SubredditMember).where(
             SubredditMember.user_id == current_user.id,
             SubredditMember.subreddit_id == sub.id,
         )
     )
-    if not member_result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must join the subreddit before posting",
+    existing_member = member_result.scalar_one_or_none()
+
+    if not existing_member:
+        if sub.is_private or sub.is_restricted:
+            # Private / restricted subreddits require explicit membership
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must join the subreddit before posting",
+            )
+        # Public subreddit — auto-join the user (same as Reddit's behaviour)
+        new_member = SubredditMember(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,
+            subreddit_id=sub.id,
+            role="member",
         )
+        db.add(new_member)
+        sub.member_count = (sub.member_count or 0) + 1
 
     post = Post(
         id=str(uuid.uuid4()),
@@ -256,6 +278,39 @@ async def delete_post(
 
 
 # ---------------------------------------------------------------------------
+# Edit Post
+# ---------------------------------------------------------------------------
+
+@router.put("/posts/{post_id}", response_model=PostOut)
+async def edit_post(
+    post_id: str,
+    payload: PostUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Edit a post's title and/or body. Only the author can edit."""
+    post = await _get_post_or_404(post_id, db)
+
+    if post.author_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    if post.is_locked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Post is locked")
+
+    if payload.title is not None:
+        if not payload.title.strip():
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Title cannot be empty")
+        post.title = payload.title.strip()
+
+    if payload.body is not None:
+        post.body = payload.body
+
+    await db.commit()
+    await db.refresh(post)
+    return await _enrich_post(post, db, current_user)
+
+
+# ---------------------------------------------------------------------------
 # Vote on Post
 # ---------------------------------------------------------------------------
 
@@ -314,6 +369,31 @@ async def vote_post(
             post.upvotes = max(0, post.upvotes - 1)
 
     post.score = post.upvotes - post.downvotes
+
+    # --- Karma tracking (skip self-votes) ---
+    # karma_delta represents how much the author's post_karma should change
+    karma_delta = 0
+    old_vote_value = existing_vote.value if existing_vote else 0
+
+    if payload.value == 0:
+        # Unvote: reverse previous vote
+        karma_delta = -old_vote_value
+    elif old_vote_value == 0:
+        # New vote
+        karma_delta = payload.value
+    elif old_vote_value == payload.value:
+        # Toggle off (same vote clicked again)
+        karma_delta = -payload.value
+    else:
+        # Flip vote (e.g. downvote -> upvote)
+        karma_delta = payload.value - old_vote_value  # e.g. 1 - (-1) = 2
+
+    if karma_delta != 0 and post.author_id and post.author_id != current_user.id:
+        author_result = await db.execute(select(User).where(User.id == post.author_id))
+        author = author_result.scalar_one_or_none()
+        if author:
+            author.post_karma = max(0, author.post_karma + karma_delta)
+
     await db.commit()
     await db.refresh(post)
 
