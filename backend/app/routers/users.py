@@ -10,11 +10,12 @@ from app.routers.subreddits import optional_current_user as get_optional_current
 from app.models.user import User
 from app.models.post import Post, Vote
 from app.models.comment import Comment
-from app.models.subreddit import Subreddit
+from app.models.subreddit import Subreddit, SubredditMember
 from app.models.user_profile import SavedPost, SavedComment
 from app.schemas.user import UserOut, UserUpdate
 from app.schemas.post import PostOut
 from app.schemas.comment import CommentOut
+from app.schemas.subreddit import SubredditSummary
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -66,6 +67,22 @@ async def get_saved_items(
     # Sort by saved_at desc
     items.sort(key=lambda x: x["saved_at"], reverse=True)
     return {"items": items}
+
+
+@router.get("/me/subreddits", response_model=list[SubredditSummary])
+async def get_my_subreddits(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return all subreddits the current user is a member of, ordered by name."""
+    result = await db.execute(
+        select(Subreddit)
+        .join(SubredditMember, SubredditMember.subreddit_id == Subreddit.id)
+        .where(SubredditMember.user_id == current_user.id)
+        .order_by(Subreddit.name.asc())
+    )
+    subs = result.scalars().all()
+    return [SubredditSummary.model_validate(s) for s in subs]
 
 
 @router.get("/{username}", response_model=UserOut)

@@ -17,6 +17,23 @@ function useDebounce(value, delay) {
   return debouncedValue
 }
 
+// Reusable profile menu row
+function ProfileMenuItem({ icon, label, subtitle, subtitleColor = 'text-[#82959b]', to, onClick }) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+      onClick={onClick}
+    >
+      <span className="text-[#d7dadc] shrink-0">{icon}</span>
+      <span className="flex flex-col">
+        <span className="text-sm text-[#d7dadc] leading-tight">{label}</span>
+        {subtitle && <span className={`text-xs leading-tight mt-0.5 ${subtitleColor}`}>{subtitle}</span>}
+      </span>
+    </Link>
+  )
+}
+
 export default function Navbar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -43,6 +60,13 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false)
   const notifRef = useRef(null)
 
+  // Profile dropdown
+  const [showProfile, setShowProfile] = useState(false)
+  const profileRef = useRef(null)
+
+  // Display mode toggle (dark = default)
+  const [darkMode, setDarkMode] = useState(true)
+
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   // Fetch subreddit suggestions when typing
@@ -58,7 +82,6 @@ export default function Navbar() {
       .finally(() => setSearchLoading(false))
   }, [debouncedQuery])
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -66,6 +89,9 @@ export default function Navbar() {
       }
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setShowNotifications(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfile(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -310,49 +336,211 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Avatar + Dropdown */}
-              <div className="relative group ml-1">
-                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1A282D] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border border-transparent group-hover:border-[#2A3236]">
+              {/* Avatar + Profile Dropdown */}
+              <div className="relative ml-1" ref={profileRef}>
+                {/* Avatar button */}
+                <button
+                  className={`flex items-center justify-center w-8 h-8 rounded-full overflow-hidden cursor-pointer transition-all border-2 ${
+                    showProfile ? 'border-[#FF4500]' : 'border-transparent hover:border-[#818384]'
+                  }`}
+                  onClick={() => setShowProfile(p => !p)}
+                  title="Profile & settings"
+                >
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
                   ) : (
-                    <svg className="w-8 h-8 mt-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-full h-full" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="10" cy="10" r="10" fill="#FF4500" />
-                      <path
-                        d="M16.67 10a1.46 1.46 0 0 0-2.47-1 7.12 7.12 0 0 0-3.85-1.23l.65-3.08 2.13.45a1 1 0 1 0 1-.95 1 1 0 0 0-.95.68l-2.38-.5a.26.26 0 0 0-.31.2l-.73 3.44a7.14 7.14 0 0 0-3.89 1.23 1.46 1.46 0 1 0-1.61 2.39 2.87 2.87 0 0 0 0 .44c0 2.24 2.61 4.06 5.83 4.06s5.83-1.82 5.83-4.06a2.87 2.87 0 0 0 0-.44 1.46 1.46 0 0 0 .66-1.13zm-9.83 1a1 1 0 1 1 1 1 1 1 0 0 1-1-1zm5.56 2.71a3.54 3.54 0 0 1-2.4.73 3.54 3.54 0 0 1-2.4-.73.25.25 0 0 1 .35-.35 3.05 3.05 0 0 0 2.05.58 3.05 3.05 0 0 0 2.05-.58.25.25 0 0 1 .35.35zm-.16-1.71a1 1 0 1 1 1-1 1 1 0 0 1-1 1z"
-                        fill="white"
-                      />
+                      <path d="M16.67 10a1.46 1.46 0 0 0-2.47-1 7.12 7.12 0 0 0-3.85-1.23l.65-3.08 2.13.45a1 1 0 1 0 1-.95 1 1 0 0 0-.95.68l-2.38-.5a.26.26 0 0 0-.31.2l-.73 3.44a7.14 7.14 0 0 0-3.89 1.23 1.46 1.46 0 1 0-1.61 2.39 2.87 2.87 0 0 0 0 .44c0 2.24 2.61 4.06 5.83 4.06s5.83-1.82 5.83-4.06a2.87 2.87 0 0 0 0-.44 1.46 1.46 0 0 0 .66-1.13zm-9.83 1a1 1 0 1 1 1 1 1 1 0 0 1-1-1zm5.56 2.71a3.54 3.54 0 0 1-2.4.73 3.54 3.54 0 0 1-2.4-.73.25.25 0 0 1 .35-.35 3.05 3.05 0 0 0 2.05.58 3.05 3.05 0 0 0 2.05-.58.25.25 0 0 1 .35.35zm-.16-1.71a1 1 0 1 1 1-1 1 1 0 0 1-1 1z" fill="white" />
                     </svg>
                   )}
                 </button>
-                <div className="hidden group-hover:block absolute top-[calc(100%+8px)] right-0 bg-[#0f1113] border border-[#2A3236] rounded-md shadow-modal z-[200] overflow-hidden min-w-[200px]">
-                  {/* User info */}
-                  <div className="px-4 py-3 border-b border-[#2A3236]">
-                    <p className="text-sm font-bold text-white truncate">u/{user?.username}</p>
-                    <p className="text-xs text-[#82959b] mt-0.5">
-                      {((user?.post_karma || 0) + (user?.comment_karma || 0)).toLocaleString()} karma
-                    </p>
+
+                {/* Profile Dropdown Panel */}
+                {showProfile && (
+                  <div className="absolute top-[calc(100%+10px)] right-0 w-[260px] bg-[#1c1c1e] border border-[#2A3236] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-[300] overflow-hidden">
+
+                    {/* ── View Profile ── */}
+                    <Link
+                      to={`/u/${user?.username}`}
+                      className="flex items-center gap-3 px-4 py-4 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+                      onClick={() => setShowProfile(false)}
+                    >
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-[#FF4500]">
+                        {user?.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                        ) : (
+                          <svg className="w-full h-full" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="10" fill="#FF4500" />
+                            <path d="M16.67 10a1.46 1.46 0 0 0-2.47-1 7.12 7.12 0 0 0-3.85-1.23l.65-3.08 2.13.45a1 1 0 1 0 1-.95 1 1 0 0 0-.95.68l-2.38-.5a.26.26 0 0 0-.31.2l-.73 3.44a7.14 7.14 0 0 0-3.89 1.23 1.46 1.46 0 1 0-1.61 2.39 2.87 2.87 0 0 0 0 .44c0 2.24 2.61 4.06 5.83 4.06s5.83-1.82 5.83-4.06a2.87 2.87 0 0 0 0-.44 1.46 1.46 0 0 0 .66-1.13zm-9.83 1a1 1 0 1 1 1 1 1 1 0 0 1-1-1zm5.56 2.71a3.54 3.54 0 0 1-2.4.73 3.54 3.54 0 0 1-2.4-.73.25.25 0 0 1 .35-.35 3.05 3.05 0 0 0 2.05.58 3.05 3.05 0 0 0 2.05-.58.25.25 0 0 1 .35.35zm-.16-1.71a1 1 0 1 1 1-1 1 1 0 0 1-1 1z" fill="white" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-[#d7dadc] leading-tight">View Profile</span>
+                        <span className="text-xs text-[#82959b] leading-tight">u/{user?.username}</span>
+                      </div>
+                    </Link>
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Edit Avatar ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H5v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10h1.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z" />
+                        </svg>
+                      }
+                      label="Edit Avatar"
+                      to={`/u/${user?.username}`}
+                      onClick={() => setShowProfile(false)}
+                    />
+
+                    {/* ── Drafts ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="16" y1="13" x2="8" y2="13" />
+                          <line x1="16" y1="17" x2="8" y2="17" />
+                          <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                      }
+                      label="Drafts"
+                      to="/"
+                      onClick={() => setShowProfile(false)}
+                    />
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Achievements ── */}
+                    <div className="bg-[rgba(255,255,255,0.04)]">
+                      <ProfileMenuItem
+                        icon={
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                            <circle cx="12" cy="8" r="6" />
+                            <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+                          </svg>
+                        }
+                        label="Achievements"
+                        subtitle="3 unlocked"
+                        subtitleColor="text-[#FF4500]"
+                        to="/"
+                        onClick={() => setShowProfile(false)}
+                      />
+                    </div>
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Earn ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 6v12" />
+                          <path d="M9 9h4.5a2.5 2.5 0 0 1 0 5H9v3" />
+                        </svg>
+                      }
+                      label="Earn"
+                      subtitle="Earn cash on Reddit"
+                      to="/"
+                      onClick={() => setShowProfile(false)}
+                    />
+
+                    {/* ── Premium ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      }
+                      label="Premium"
+                      to="/"
+                      onClick={() => setShowProfile(false)}
+                    />
+
+                    {/* ── Display Mode ── */}
+                    <button
+                      className="flex items-center gap-3 w-full px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+                      onClick={() => setDarkMode(p => !p)}
+                    >
+                      <span className="text-[#d7dadc] shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <rect x="1" y="5" width="22" height="14" rx="7" />
+                          <circle cx={darkMode ? '16' : '8'} cy="12" r="4" fill="currentColor" className="transition-all duration-200" />
+                        </svg>
+                      </span>
+                      <span className="text-sm text-[#d7dadc] text-left flex-1">Display Mode</span>
+                      <span className="text-[10px] text-[#82959b] font-medium">{darkMode ? 'Dark' : 'Light'}</span>
+                    </button>
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Log Out ── */}
+                    <button
+                      className="flex items-center gap-3 w-full px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+                      onClick={handleLogout}
+                    >
+                      <span className="text-[#d7dadc] shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                      </span>
+                      <span className="text-sm text-[#d7dadc] text-left">Log Out</span>
+                    </button>
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Advertise ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="M5 3l14 9-14 9V3z" />
+                          <circle cx="19" cy="5" r="2" />
+                        </svg>
+                      }
+                      label="Advertise on Reddit"
+                      to="/"
+                      onClick={() => setShowProfile(false)}
+                    />
+
+                    {/* ── Try Reddit Pro ── */}
+                    <Link
+                      to="/"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+                      onClick={() => setShowProfile(false)}
+                    >
+                      <span className="text-[#d7dadc] shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      </span>
+                      <span className="text-sm text-[#d7dadc] flex-1">Try Reddit Pro</span>
+                      <span className="text-[10px] font-bold bg-[#FF4500] text-white px-1.5 py-0.5 rounded-sm">BETA</span>
+                    </Link>
+
+                    <div className="h-[1px] bg-[#2A3236]" />
+
+                    {/* ── Settings ── */}
+                    <ProfileMenuItem
+                      icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                      }
+                      label="Settings"
+                      to="/settings"
+                      onClick={() => setShowProfile(false)}
+                    />
+
                   </div>
-                  <Link to={`/u/${user?.username}`} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
-                    👤 Profile
-                  </Link>
-                  <Link to="/messages" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
-                    ✉️ Messages
-                  </Link>
-                  <Link to="/subreddits/create" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
-                    🏘️ Create Community
-                  </Link>
-                  <Link to="/settings" className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-white text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]">
-                    ⚙️ Settings
-                  </Link>
-                  <div className="h-[1px] bg-[#2A3236] my-1" />
-                  <button
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#d93025] text-left bg-transparent border-none cursor-pointer transition-colors duration-100 hover:bg-[rgba(255,255,255,0.1)]"
-                    onClick={handleLogout}
-                  >
-                    🚪 Log Out
-                  </button>
-                </div>
+                )}
               </div>
             </>
           ) : (
