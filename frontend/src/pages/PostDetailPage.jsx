@@ -7,8 +7,10 @@ import CommentBox from '../components/comment/CommentBox'
 import CommentThread from '../components/comment/CommentThread'
 import { getPost, votePost } from '../api/posts'
 import { getComments, createComment } from '../api/comments'
+import { toggleSavePost } from '../api/users'
 import useAuthStore from '../store/authStore'
 import { timeAgo, formatNumber } from '../utils/time'
+import { useEffect } from 'react'
 const COMMENT_SORTS = [
   { value: 'best', label: 'Best' },
   { value: 'top', label: 'Top' },
@@ -23,11 +25,18 @@ export default function PostDetailPage() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const [commentSort, setCommentSort] = useState('best')
   const queryClient = useQueryClient()
+  const [localSaved, setLocalSaved] = useState(false)
 
   const { data: post, isLoading: postLoading, isError: postError } = useQuery({
     queryKey: ['post', postId],
     queryFn: () => getPost(postId),
   })
+
+  // Keep localSaved in sync if post changes
+
+  useEffect(() => {
+    if (post) setLocalSaved(post.is_saved || false)
+  }, [post])
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
     queryKey: ['comments', postId, commentSort],
@@ -77,6 +86,18 @@ export default function PostDetailPage() {
     }
   }
 
+  const handleSave = async (e) => {
+    e.stopPropagation()
+    if (!isAuthenticated) return // redirect or ignore
+    const newSaved = !localSaved
+    setLocalSaved(newSaved)
+    try {
+      await toggleSavePost(postId)
+    } catch (err) {
+      setLocalSaved(!newSaved)
+    }
+  }
+
   if (postLoading) {
     return (
       <PageLayout>
@@ -120,7 +141,7 @@ export default function PostDetailPage() {
                 <span>{timeAgo(post.created_at)}</span>
               </div>
             </div>
-            
+
             <button className="text-[#82959b] hover:bg-[#272729] rounded-full p-2">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                 <circle cx="5" cy="12" r="2" />
@@ -138,8 +159,8 @@ export default function PostDetailPage() {
           {/* Flair */}
           {post.flair_text && (
             <div className="mb-3">
-              <span 
-                className="inline-block py-1 px-3 rounded-full text-xs font-bold" 
+              <span
+                className="inline-block py-1 px-3 rounded-full text-xs font-bold"
                 style={{ background: post.flair_color || '#FFE500', color: '#000000' }}
               >
                 {post.flair_text}
@@ -177,23 +198,23 @@ export default function PostDetailPage() {
           <div className="flex items-center flex-wrap gap-2 mt-2 pt-2 border-t border-[#2A3236]">
             {/* Vote Pill */}
             <div className="flex items-center bg-[#272729] hover:bg-[#343435] rounded-full">
-              <button 
+              <button
                 className={`p-2 sm:p-2.5 rounded-l-full flex items-center justify-center transition-colors ${post.user_vote === 1 ? 'text-[#FF4500]' : 'text-[#d7dadc] hover:text-[#FF4500]'}`}
                 onClick={() => handleVote(1)}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                  <path d="M12 19V5M5 12l7-7 7 7" />
                 </svg>
               </button>
               <span className={`text-sm font-bold px-2 ${post.user_vote === 1 ? 'text-[#FF4500]' : post.user_vote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc]'}`}>
                 {formatNumber(post.score)}
               </span>
-              <button 
+              <button
                 className={`p-2 sm:p-2.5 rounded-r-full flex items-center justify-center transition-colors ${post.user_vote === -1 ? 'text-[#7193ff]' : 'text-[#d7dadc] hover:text-[#7193ff]'}`}
                 onClick={() => handleVote(-1)}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                  <path d="M12 5v14M5 12l7 7 7-7"/>
+                  <path d="M12 5v14M5 12l7 7 7-7" />
                 </svg>
               </button>
             </div>
@@ -223,6 +244,17 @@ export default function PostDetailPage() {
                 <line x1="12" y1="2" x2="12" y2="15"></line>
               </svg>
               Share
+            </button>
+
+            {/* Save Pill */}
+            <button
+              className="flex items-center gap-1.5 py-2 px-4 sm:py-2.5 sm:px-4 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-[#d7dadc] transition-colors"
+              onClick={handleSave}
+            >
+              <svg viewBox="0 0 24 24" fill={localSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              </svg>
+              {localSaved ? 'Saved' : 'Save'}
             </button>
           </div>
         </div>

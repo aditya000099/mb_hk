@@ -23,6 +23,13 @@ class TokenRefresh(BaseModel):
     refresh_token: str
 
 
+class UserUpdate(BaseModel):
+    display_name: Optional[str] = Field(None, max_length=50)
+    bio: Optional[str] = Field(None, max_length=1000)
+    avatar_url: Optional[str] = Field(None, max_length=500)
+    banner_url: Optional[str] = Field(None, max_length=500)
+
+
 # ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------

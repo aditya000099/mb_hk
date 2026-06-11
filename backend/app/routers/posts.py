@@ -17,6 +17,7 @@ from app.models.post import Post, Vote
 from app.models.subreddit import Subreddit, SubredditMember
 from app.models.user import User
 from app.models.comment import Comment  # noqa: F401 — needed for relationship resolution
+from app.models.user_profile import SavedPost
 from app.routers.auth import get_current_user
 from app.routers.subreddits import optional_current_user
 from app.schemas.post import PostCreate, PostOut, VoteIn, VoteResponse
@@ -400,3 +401,28 @@ async def popular_feed(
     posts = posts_result.scalars().all()
 
     return [await _enrich_post(p, db, current_user) for p in posts]
+
+
+@router.post("/posts/{post_id}/save")
+async def toggle_save_post(
+    post_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    post = await db.get(Post, post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+        
+    stmt = select(SavedPost).where(SavedPost.user_id == current_user.id, SavedPost.post_id == post_id)
+    saved = (await db.execute(stmt)).scalar_one_or_none()
+    
+    if saved:
+        await db.delete(saved)
+        action = "unsaved"
+    else:
+        new_save = SavedPost(user_id=current_user.id, post_id=post_id)
+        db.add(new_save)
+        action = "saved"
+        
+    await db.commit()
+    return {"status": action}

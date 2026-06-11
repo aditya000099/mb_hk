@@ -15,6 +15,7 @@ from app.core.database import get_db
 from app.models.post import Post, Vote
 from app.models.comment import Comment
 from app.models.user import User
+from app.models.user_profile import SavedComment
 from app.routers.auth import get_current_user
 from app.routers.subreddits import optional_current_user
 from app.schemas.comment import CommentCreate, CommentOut
@@ -298,3 +299,28 @@ async def vote_comment(
         "downvotes": comment.downvotes,
         "user_vote": user_vote,
     }
+
+
+@router.post("/comments/{comment_id}/save")
+async def toggle_save_comment(
+    comment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    comment = await db.get(Comment, comment_id)
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+        
+    stmt = select(SavedComment).where(SavedComment.user_id == current_user.id, SavedComment.comment_id == comment_id)
+    saved = (await db.execute(stmt)).scalar_one_or_none()
+    
+    if saved:
+        await db.delete(saved)
+        action = "unsaved"
+    else:
+        new_save = SavedComment(user_id=current_user.id, comment_id=comment_id)
+        db.add(new_save)
+        action = "saved"
+        
+    await db.commit()
+    return {"status": action}

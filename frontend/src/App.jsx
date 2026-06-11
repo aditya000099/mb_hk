@@ -9,6 +9,7 @@ import SubredditPage from './pages/SubredditPage';
 import PostDetailPage from './pages/PostDetailPage';
 import SubmitPage from './pages/SubmitPage';
 import CreateSubredditPage from './pages/CreateSubredditPage';
+import UserProfilePage from './pages/UserProfilePage';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/r/popular" element={<PopularPage />} />
+          <Route path="/u/:username" element={<UserProfilePage />} />
           <Route path="/r/:name" element={<SubredditPage />} />
           <Route
             path="/r/:name/comments/:postId"

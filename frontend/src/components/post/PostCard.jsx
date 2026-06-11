@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import VoteButtons from '../ui/VoteButtons'
 import { timeAgo, formatNumber } from '../../utils/time'
 import { votePost } from '../../api/posts'
+import { toggleSavePost } from '../../api/users'
 import useAuthStore from '../../store/authStore'
 
 export default function PostCard({ post, onVoteUpdate }) {
@@ -11,6 +12,7 @@ export default function PostCard({ post, onVoteUpdate }) {
 
   const [localVote, setLocalVote] = useState(post.user_vote || 0)
   const [localScore, setLocalScore] = useState(post.score || 0)
+  const [localSaved, setLocalSaved] = useState(post.is_saved || false)
 
   useEffect(() => {
     setLocalVote(post.user_vote || 0)
@@ -47,7 +49,20 @@ export default function PostCard({ post, onVoteUpdate }) {
       if (onVoteUpdate) onVoteUpdate(post.id, result.score, value)
     } catch (e) {
       setLocalVote(post.user_vote || 0)
+      setLocalVote(post.user_vote || 0)
       setLocalScore(post.score || 0)
+    }
+  }
+
+  const handleSave = async (e) => {
+    e.stopPropagation()
+    if (!isAuthenticated) { navigate('/login'); return }
+    const newSaved = !localSaved
+    setLocalSaved(newSaved)
+    try {
+      await toggleSavePost(post.id)
+    } catch (err) {
+      setLocalSaved(!newSaved)
     }
   }
 
@@ -180,6 +195,17 @@ export default function PostCard({ post, onVoteUpdate }) {
             <line x1="12" y1="2" x2="12" y2="15"></line>
           </svg>
           Share
+        </button>
+
+        {/* Save Pill */}
+        <button 
+          className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors"
+          onClick={handleSave}
+        >
+          <svg viewBox="0 0 24 24" fill={localSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          {localSaved ? 'Saved' : 'Save'}
         </button>
       </div>
     </div>
