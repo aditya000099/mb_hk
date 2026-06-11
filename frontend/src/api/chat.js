@@ -10,6 +10,11 @@ export const getFriends = async () => {
   return data;
 };
 
+export const getPendingRequests = async () => {
+  const { data } = await api.get('/chat/pending-requests');
+  return data;
+};
+
 export const sendMessage = async (recipientId, content) => {
   const { data } = await api.post(`/chat/messages/${recipientId}`, { content });
   return data;

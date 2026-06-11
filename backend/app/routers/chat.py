@@ -230,3 +230,38 @@ async def get_inbox(
     # Sort by latest message
     output.sort(key=lambda x: x.latest_message_at, reverse=True)
     return output
+
+
+@router.get("/pending-requests", response_model=List[FriendshipResponse])
+async def get_pending_requests(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Return all pending friend requests where the current user is the RECEIVER."""
+    stmt = select(Friendship).where(
+        Friendship.friend_id == current_user.id,
+        Friendship.status == "pending"
+    )
+    result = await db.execute(stmt)
+    pending = result.scalars().all()
+
+    if not pending:
+        return []
+
+    sender_ids = [f.user_id for f in pending]
+    users_stmt = select(User).where(User.id.in_(sender_ids))
+    users_result = await db.execute(users_stmt)
+    users_dict = {u.id: u for u in users_result.scalars().all()}
+
+    output = []
+    for f in pending:
+        sender = users_dict.get(f.user_id)
+        if not sender:
+            continue
+        f_out = FriendshipResponse.model_validate(f)
+        f_out.friend_username = sender.username
+        f_out.friend_display_name = sender.display_name
+        f_out.friend_avatar_url = sender.avatar_url
+        output.append(f_out)
+
+    return output
