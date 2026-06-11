@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import PageLayout from '../components/layout/PageLayout';
 import { createPost } from '../api/posts';
 import { getPopularSubreddits } from '../api/subreddits';
@@ -37,6 +39,7 @@ export default function SubmitPage() {
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
+  const [isPreview, setIsPreview] = useState(false);
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -132,7 +135,7 @@ export default function SubmitPage() {
     }
 
     setBody(body.substring(0, start) + newText + body.substring(end));
-    
+
     // Focus and restore cursor
     setTimeout(() => {
       textarea.focus();
@@ -313,14 +316,73 @@ export default function SubmitPage() {
             Add tags
           </button>
 
-          {/* Body Textarea */}
-          <textarea
-            ref={textareaRef}
-            className="w-full bg-transparent border-none text-base text-[#d7dadc] outline-none placeholder:text-[#82959b] resize-y min-h-[160px] leading-relaxed mb-4 font-sans"
-            placeholder="Share the details..."
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
+          {/* Write / Preview Toggle */}
+          <div className="flex items-center gap-0 mb-3 border-b border-[#2A3236]">
+            <button
+              type="button"
+              onClick={() => setIsPreview(false)}
+              className={`px-4 py-2 text-sm font-bold border-none cursor-pointer bg-transparent transition-colors ${!isPreview
+                  ? 'text-white border-b-2 border-white -mb-[2px]'
+                  : 'text-[#82959b] hover:text-white'
+                }`}
+            >
+              Write
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsPreview(true)}
+              className={`px-4 py-2 text-sm font-bold border-none cursor-pointer bg-transparent transition-colors ${isPreview
+                  ? 'text-white border-b-2 border-white -mb-[2px]'
+                  : 'text-[#82959b] hover:text-white'
+                }`}
+            >
+              Preview
+            </button>
+          </div>
+
+          {/* Body Textarea or Preview */}
+          {isPreview ? (
+            <div className="min-h-[160px] mb-4 text-sm text-[#d7dadc] leading-relaxed prose prose-invert max-w-none">
+              {body ? (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-3 mt-2">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold text-white mb-2 mt-2">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-bold text-white mb-2 mt-2">{children}</h3>,
+                    p: ({ children }) => <p className="text-[#d7dadc] mb-3 leading-relaxed">{children}</p>,
+                    strong: ({ children }) => <strong className="text-white font-bold">{children}</strong>,
+                    em: ({ children }) => <em className="text-[#d7dadc] italic">{children}</em>,
+                    code: ({ inline, children }) => inline
+                      ? <code className="bg-[#1A282D] text-[#46d160] px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
+                      : <pre className="bg-[#1A282D] text-[#46d160] p-4 rounded-lg text-sm font-mono overflow-x-auto mb-3"><code>{children}</code></pre>,
+                    blockquote: ({ children }) => <blockquote className="border-l-4 border-[#82959b] pl-4 text-[#82959b] italic mb-3">{children}</blockquote>,
+                    ul: ({ children }) => <ul className="list-disc list-inside text-[#d7dadc] mb-3 space-y-1 pl-2">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside text-[#d7dadc] mb-3 space-y-1 pl-2">{children}</ol>,
+                    li: ({ children }) => <li className="text-[#d7dadc]">{children}</li>,
+                    a: ({ href, children }) => <a href={href} className="text-[#8ca4e6] hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                    img: ({ src, alt }) => <img src={src} alt={alt} className="max-w-full rounded-lg my-3" />,
+                    table: ({ children }) => <div className="overflow-x-auto mb-3"><table className="w-full border-collapse text-sm">{children}</table></div>,
+                    th: ({ children }) => <th className="border border-[#2A3236] px-3 py-2 text-left text-[#d7dadc] font-bold bg-[#1A282D]">{children}</th>,
+                    td: ({ children }) => <td className="border border-[#2A3236] px-3 py-2 text-[#d7dadc]">{children}</td>,
+                    hr: () => <hr className="border-[#2A3236] my-4" />,
+                  }}
+                >
+                  {body}
+                </ReactMarkdown>
+              ) : (
+                <p className="text-[#82959b] italic">Nothing to preview.</p>
+              )}
+            </div>
+          ) : (
+            <textarea
+              ref={textareaRef}
+              className="w-full bg-transparent border-none text-base text-[#d7dadc] outline-none placeholder:text-[#82959b] resize-y min-h-[160px] leading-relaxed mb-4 font-sans"
+              placeholder="Share the details... (supports **bold**, *italic*, # headings, - lists, > quotes, `code`)"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+            />
+          )}
 
           {/* Toolbar */}
           <div className="flex items-center gap-4 text-[#82959b] mb-4">
@@ -344,19 +406,19 @@ export default function SubmitPage() {
           </div>
 
           {/* Hidden media inputs */}
-          <input 
-            type="file" 
-            ref={imageInputRef} 
-            className="hidden" 
-            accept="image/*" 
-            onChange={(e) => handleMediaUpload(e, 'image')} 
+          <input
+            type="file"
+            ref={imageInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => handleMediaUpload(e, 'image')}
           />
-          <input 
-            type="file" 
-            ref={videoInputRef} 
-            className="hidden" 
-            accept="video/*" 
-            onChange={(e) => handleMediaUpload(e, 'video')} 
+          <input
+            type="file"
+            ref={videoInputRef}
+            className="hidden"
+            accept="video/*"
+            onChange={(e) => handleMediaUpload(e, 'video')}
           />
 
           <div className="w-full h-[1px] bg-[#2A3236] mb-4"></div>
@@ -378,8 +440,8 @@ export default function SubmitPage() {
             <button
               type="submit"
               className={`px-6 py-2 rounded-full font-bold text-sm transition-colors border-none ${isValid
-                  ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
-                  : 'bg-[#1A282D] text-[#82959b] cursor-not-allowed opacity-80'
+                ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
+                : 'bg-[#1A282D] text-[#82959b] cursor-not-allowed opacity-80'
                 }`}
               disabled={submitMutation.isPending || !isValid}
             >

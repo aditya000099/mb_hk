@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { timeAgo, formatNumber } from '../../utils/time'
 import { votePost, deletePost, editPost } from '../../api/posts'
 import { toggleSavePost } from '../../api/users'
@@ -271,8 +273,29 @@ export default function PostCard({ post, onVoteUpdate, onDelete }) {
       )}
 
       {post.body && (
-        <div className="text-sm text-[#82959b] leading-relaxed mb-3 line-clamp-4 break-words">
-          {post.body}
+        <div className="text-sm text-[#82959b] leading-relaxed mb-3 line-clamp-4 break-words markdown-preview">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ children }) => <span className="text-[#82959b]">{children} </span>,
+              strong: ({ children }) => <strong className="text-[#aab8b8] font-bold">{children}</strong>,
+              em: ({ children }) => <em className="italic">{children}</em>,
+              code: ({ inline, children }) => inline
+                ? <code className="bg-[#1A282D] text-[#46d160] px-1 rounded text-xs font-mono">{children}</code>
+                : <code className="text-[#46d160] text-xs font-mono">{children}</code>,
+              a: ({ href, children }) => <a href={href} className="text-[#8ca4e6] hover:underline" onClick={e => e.stopPropagation()} target="_blank" rel="noopener noreferrer">{children}</a>,
+              h1: ({ children }) => <strong className="text-[#d7dadc] font-bold">{children} </strong>,
+              h2: ({ children }) => <strong className="text-[#d7dadc] font-bold">{children} </strong>,
+              h3: ({ children }) => <strong className="text-[#d7dadc] font-bold">{children} </strong>,
+              blockquote: ({ children }) => <span className="border-l-2 border-[#82959b] pl-2 italic text-[#6e7f80]">{children}</span>,
+              ul: ({ children }) => <span>{children}</span>,
+              ol: ({ children }) => <span>{children}</span>,
+              li: ({ children }) => <span>• {children} </span>,
+              img: () => null,
+            }}
+          >
+            {post.body}
+          </ReactMarkdown>
         </div>
       )}
 

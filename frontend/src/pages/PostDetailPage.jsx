@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import PageLayout from '../components/layout/PageLayout'
 import VoteButtons from '../components/ui/VoteButtons'
 import CommentBox from '../components/comment/CommentBox'
@@ -266,9 +268,32 @@ export default function PostDetailPage() {
 
           {post.body && (
             <div className="text-sm sm:text-base text-[#d7dadc] leading-[1.6] mb-4 break-words">
-              {post.body.split('\n').map((line, i) => (
-                <p key={i} className="mb-2">{line || <br />}</p>
-              ))}
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-3 mt-4">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-xl font-bold text-white mb-2 mt-4">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-lg font-bold text-white mb-2 mt-3">{children}</h3>,
+                  p: ({ children }) => <p className="text-[#d7dadc] mb-3 leading-relaxed">{children}</p>,
+                  strong: ({ children }) => <strong className="text-white font-bold">{children}</strong>,
+                  em: ({ children }) => <em className="text-[#d7dadc] italic">{children}</em>,
+                  code: ({ inline, children }) => inline
+                    ? <code className="bg-[#1A282D] text-[#46d160] px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
+                    : <pre className="bg-[#1A282D] border border-[#2A3236] text-[#46d160] p-4 rounded-lg text-sm font-mono overflow-x-auto mb-3"><code>{children}</code></pre>,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-[#82959b] pl-4 text-[#82959b] italic mb-3">{children}</blockquote>,
+                  ul: ({ children }) => <ul className="list-disc list-inside text-[#d7dadc] mb-3 space-y-1 pl-4">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside text-[#d7dadc] mb-3 space-y-1 pl-4">{children}</ol>,
+                  li: ({ children }) => <li className="text-[#d7dadc]">{children}</li>,
+                  a: ({ href, children }) => <a href={href} className="text-[#8ca4e6] hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                  img: ({ src, alt }) => <img src={src} alt={alt} className="max-w-full rounded-lg my-3" />,
+                  table: ({ children }) => <div className="overflow-x-auto mb-3"><table className="w-full border-collapse text-sm">{children}</table></div>,
+                  th: ({ children }) => <th className="border border-[#2A3236] px-3 py-2 text-left text-white font-bold bg-[#1A282D]">{children}</th>,
+                  td: ({ children }) => <td className="border border-[#2A3236] px-3 py-2 text-[#d7dadc]">{children}</td>,
+                  hr: () => <hr className="border-[#2A3236] my-4" />,
+                }}
+              >
+                {post.body}
+              </ReactMarkdown>
             </div>
           )}
 

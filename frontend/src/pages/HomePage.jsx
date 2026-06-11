@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import PageLayout from '../components/layout/PageLayout'
 import SortBar from '../components/post/SortBar'
 import PostFeed from '../components/post/PostFeed'
-import CreatePostShortcut from '../components/post/CreatePostShortcut'
 import { getFeed, getPopularFeed } from '../api/posts'
 import useAuthStore from '../store/authStore'
 import { timeAgo } from '../utils/time'
@@ -25,7 +24,7 @@ export default function HomePage() {
     <PageLayout>
       {/* Feed */}
       <div className="page-layout__feed">
-        {user && <CreatePostShortcut />}
+        {/* {user && <CreatePostShortcut />} */}
         <SortBar
           sort={sort}
           setSort={setSort}
