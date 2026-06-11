@@ -79,7 +79,7 @@ export default function HomePage() {
                         <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-brand shrink-0 flex justify-center items-center text-white text-xs font-bold">
-                         {sub.icon_url ? <img src={sub.icon_url} alt="" className="w-full h-full object-cover"/> : sub.name[0]?.toUpperCase()}
+                        {sub.icon_url ? <img src={sub.icon_url} alt="" className="w-full h-full object-cover" /> : sub.name[0]?.toUpperCase()}
                       </div>
                       <Link to={`/r/${sub.name}`} className="text-sm font-medium text-text-primary hover:underline">
                         r/{sub.name}
@@ -107,7 +107,7 @@ export default function HomePage() {
             <a href="#" className="text-xs text-text-muted no-underline hover:underline">Privacy Policy</a>
             <a href="#" className="text-xs text-text-muted no-underline hover:underline">User Agreement</a>
           </div>
-          <p className="text-xs text-text-muted px-1">Reddit Clone © 2024. All rights reserved.</p>
+          <p className="text-xs text-text-muted px-1">Reddit © 2026. All rights reserved.</p>
         </div>
       </div>
     </>
