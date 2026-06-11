@@ -10,6 +10,9 @@ import PostDetailPage from './pages/PostDetailPage';
 import SubmitPage from './pages/SubmitPage';
 import CreateSubredditPage from './pages/CreateSubredditPage';
 import UserProfilePage from './pages/UserProfilePage';
+import SearchPage from './pages/SearchPage';
+import MessagesPage from './pages/MessagesPage';
+import SettingsPage from './pages/SettingsPage';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -31,6 +34,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/r/popular" element={<PopularPage />} />
           <Route path="/u/:username" element={<UserProfilePage />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/r/:name" element={<SubredditPage />} />
           <Route
             path="/r/:name/comments/:postId"
@@ -71,6 +75,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CreateSubredditPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

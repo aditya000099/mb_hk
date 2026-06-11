@@ -13,6 +13,7 @@ export default function PostCard({ post, onVoteUpdate }) {
   const [localVote, setLocalVote] = useState(post.user_vote || 0)
   const [localScore, setLocalScore] = useState(post.score || 0)
   const [localSaved, setLocalSaved] = useState(post.is_saved || false)
+  const [shareToast, setShareToast] = useState(false)
 
   useEffect(() => {
     setLocalVote(post.user_vote || 0)
@@ -63,6 +64,28 @@ export default function PostCard({ post, onVoteUpdate }) {
       await toggleSavePost(post.id)
     } catch (err) {
       setLocalSaved(!newSaved)
+    }
+  }
+
+  const handleShare = async (e) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/r/${post.subreddit_name}/comments/${post.id}`
+    try {
+      if (navigator.share && window.innerWidth < 768) {
+        await navigator.share({ title: post.title, url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setShareToast(true)
+        setTimeout(() => setShareToast(false), 2000)
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url)
+        setShareToast(true)
+        setTimeout(() => setShareToast(false), 2000)
+      } catch {
+        window.prompt('Copy this link:', url)
+      }
     }
   }
 
@@ -188,14 +211,24 @@ export default function PostCard({ post, onVoteUpdate }) {
         </button>
 
         {/* Share Pill */}
-        <button className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-            <polyline points="16 6 12 2 8 6"></polyline>
-            <line x1="12" y1="2" x2="12" y2="15"></line>
-          </svg>
-          Share
-        </button>
+        <div className="relative">
+          <button
+            className="flex items-center gap-1.5 py-2 px-3 rounded-full bg-[#272729] hover:bg-[#343435] text-xs font-bold text-[#d7dadc] transition-colors"
+            onClick={handleShare}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+            Share
+          </button>
+          {shareToast && (
+            <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-[#1A282D] text-[#d7dadc] text-xs rounded-md whitespace-nowrap shadow-lg z-10">
+              ✓ Link copied!
+            </div>
+          )}
+        </div>
 
         {/* Save Pill */}
         <button

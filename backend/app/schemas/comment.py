@@ -15,6 +15,10 @@ class CommentCreate(BaseModel):
     parent_comment_id: Optional[str] = None
 
 
+class CommentUpdate(BaseModel):
+    body: str = Field(..., min_length=1, max_length=10000)
+
+
 # ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------

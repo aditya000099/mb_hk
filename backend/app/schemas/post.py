@@ -71,6 +71,12 @@ class PostOut(BaseModel):
     author_username: Optional[str] = None
     subreddit_name: Optional[str] = None
     user_vote: Optional[int] = None  # +1 / -1 / 0 / None
+    is_saved: bool = False
+
+
+class PostUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=300)
+    body: Optional[str] = Field(None, max_length=40000)
 
 
 class VoteResponse(BaseModel):
