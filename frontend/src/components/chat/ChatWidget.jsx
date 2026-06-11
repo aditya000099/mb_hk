@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getFriends, getMessages, sendMessage, toggleFriendRequest } from '../../api/chat';
 import useAuthStore from '../../store/authStore';
+import useChatStore from '../../store/chatStore';
 
-export default function ChatWidget({ isOpen, onClose }) {
-  const [activeFriend, setActiveFriend] = useState(null);
+export default function ChatWidget() {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const currentUser = useAuthStore(s => s.user);
+  
+  const { isOpen, activeFriend, setActiveFriend, closeChat } = useChatStore();
 
   // Fetch friends list
   const { data: friends = [] } = useQuery({
@@ -67,7 +69,7 @@ export default function ChatWidget({ isOpen, onClose }) {
           )}
           <button 
             className="text-[#82959b] hover:text-white bg-transparent border-none cursor-pointer"
-            onClick={onClose}
+            onClick={closeChat}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>

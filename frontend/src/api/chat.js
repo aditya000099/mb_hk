@@ -24,3 +24,8 @@ export const getUnreadCount = async () => {
   const { data } = await api.get('/chat/unread');
   return data;
 };
+
+export const getInbox = async () => {
+  const { data } = await api.get('/chat/inbox');
+  return data;
+};

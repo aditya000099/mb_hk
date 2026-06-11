@@ -30,3 +30,13 @@ class MessageResponse(BaseModel):
     content: str
     is_read: bool
     created_at: datetime
+
+
+class InboxResponse(BaseModel):
+    friend_id: str
+    friend_username: str
+    friend_display_name: Optional[str]
+    friend_avatar_url: Optional[str]
+    latest_message: str
+    latest_message_at: datetime
+    unread_count: int
