@@ -24,7 +24,7 @@ export default function ChatWidget({ isOpen, onClose }) {
     queryKey: ['messages', activeFriend?.id],
     queryFn: () => getMessages(activeFriend?.id),
     enabled: isAuthenticated && !!activeFriend && isOpen,
-    refetchInterval: 3000,
+    refetchInterval: 1000,
   });
 
   const sendMutation = useMutation({
@@ -93,8 +93,8 @@ export default function ChatWidget({ isOpen, onClose }) {
                     onClick={() => {
                       if (!isPending) {
                         setActiveFriend({ 
+                          ...f,
                           id: f.friend_id === currentUser?.id ? f.user_id : f.friend_id,
-                          ...f
                         });
                       }
                     }}
