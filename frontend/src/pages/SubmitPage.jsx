@@ -54,6 +54,7 @@ export default function SubmitPage() {
     const data = {
       title: title.trim(),
       post_type: activeTab,
+      subreddit_name: subredditName,
     }
 
     if (activeTab === 'text') data.body = body
