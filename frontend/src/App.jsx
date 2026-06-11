@@ -13,6 +13,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import SearchPage from './pages/SearchPage';
 import MessagesPage from './pages/MessagesPage';
 import SettingsPage from './pages/SettingsPage';
+import NewsPage from './pages/NewsPage';
 import './index.css';
 
 import { getMe } from './api/auth';
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/r/popular" element={<PopularPage />} />
+          <Route path="/news" element={<NewsPage />} />
           <Route path="/u/:username" element={<UserProfilePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/r/:name" element={<SubredditPage />} />
