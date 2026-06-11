@@ -235,3 +235,134 @@ html.light aside {
   background-color: #f6f7f8 !important;
   border-color: var(--color-border) !important;
 }
+
+/* ── Light Mode Hover States ──────────────────────────────────
+   Override all dark hover backgrounds so they look clean
+   in light mode instead of flashing dark.
+   ──────────────────────────────────────────────────────────── */
+
+/* Dark hover backgrounds → light gray */
+html.light [class*="hover:bg-\\[#272729\\]"]:hover,
+html.light [class*="hover:bg-\\[#1A282D\\]"]:hover,
+html.light [class*="hover:bg-\\[#2A3236\\]"]:hover,
+html.light [class*="hover:bg-\\[#0f1113\\]"]:hover,
+html.light [class*="hover:bg-\\[#0b1416\\]"]:hover,
+html.light [class*="hover:bg-\\[#0B1416\\]"]:hover,
+html.light [class*="hover:bg-\\[#1c1c1e\\]"]:hover {
+  background-color: #e8eaed !important;
+}
+
+/* Semi-transparent dark overlays → light equivalents */
+html.light [class*="hover:bg-\\[rgba(255,255,255,0.06)\\]"]:hover,
+html.light [class*="hover:bg-\\[rgba(255,255,255,0.1)\\]"]:hover,
+html.light [class*="hover:bg-\\[rgba(255,255,255,0.05)\\]"]:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Post card hover — PostCard typically wraps in a div with dark hover */
+html.light article:hover,
+html.light [class*="hover:border-\\[#82959b\\]"]:hover {
+  border-color: #b8bfc4 !important;
+  background-color: #f6f7f8 !important;
+}
+
+/* Vote column dark bg in light mode */
+html.light [class*="bg-\\[#0a0c0e\\]"] {
+  background-color: #f0f2f4 !important;
+}
+
+/* Sort bar buttons in light mode */
+html.light .sort-btn:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #1c1c1c !important;
+}
+
+/* Sidebar card hover */
+html.light [class*="hover:bg-\\[#1A282D\\]"]:hover {
+  background-color: #e8eaed !important;
+}
+
+/* NavItem in sidebar hover */
+html.light [class*="hover:bg-\\[#272729\\]"]:hover {
+  background-color: #e8eaed !important;
+}
+
+/* Dropdown rows hover */
+html.light [class*="hover:bg-\\[rgba(255,255,255,0.06)\\]"]:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Input / textarea in light mode */
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #f6f7f8 !important;
+  border-color: #edeff1 !important;
+  color: #1c1c1c !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #8a8a8a !important;
+}
+
+html.light input:focus,
+html.light textarea:focus {
+  border-color: #FF4500 !important;
+  background-color: #ffffff !important;
+}
+
+/* Chat widget in light mode */
+html.light [class*="bg-\\[#0b1416\\]"],
+html.light [class*="bg-\\[#0B1416\\]"] {
+  background-color: #ffffff !important;
+}
+
+/* Dropdown panels in light mode */
+html.light [class*="bg-\\[#1c1c1e\\]"] {
+  background-color: #ffffff !important;
+  border-color: #edeff1 !important;
+}
+
+/* Text in dropdown items */
+html.light [class*="bg-\\[rgba(255,255,255,0.04)\\]"] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── PostCard-specific light mode hovers ─────────────────────── */
+html.light [class*="hover:bg-\\[#151719\\]"]:hover {
+  background-color: #e8eaed !important;
+}
+
+html.light [class*="hover:bg-\\[#343435\\]"]:hover,
+html.light [class*="bg-\\[#343435\\]"] {
+  background-color: #e8eaed !important;
+}
+
+/* Post action pill buttons (Comment / Share / Save / …) */
+html.light [class*="bg-\\[#272729\\]"] {
+  background-color: #edeff1 !important;
+}
+
+html.light [class*="bg-\\[#272729\\]"] [class*="text-\\[#d7dadc\\]"],
+html.light [class*="bg-\\[#272729\\]"] span {
+  color: #1c1c1c !important;
+}
+
+/* Vote section dark bg */
+html.light [class*="bg-\\[#0a0c0e\\]"] {
+  background-color: #f0f2f4 !important;
+}
+
+/* Active sort button */
+html.light .sort-btn.active {
+  background-color: rgba(255, 69, 0, 0.1) !important;
+  color: #FF4500 !important;
+}
+
+/* Sidebar left dark bg */
+html.light aside,
+html.light [class*="bg-\\[#0B1416\\]"],
+html.light [class*="bg-\\[#0b1416\\]"] {
+  background-color: #f6f7f8 !important;
+}
