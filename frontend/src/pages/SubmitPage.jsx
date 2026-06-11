@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import PageLayout from '../components/layout/PageLayout';
 import { createPost } from '../api/posts';
 import { getPopularSubreddits } from '../api/subreddits';
+import { useRef } from 'react';
 
 const TOOLBAR_ICONS = [
   <svg
@@ -187,7 +188,7 @@ export default function SubmitPage() {
     onError: (err) => {
       setError(
         err?.response?.data?.detail ||
-          'Failed to create post. Please try again.',
+        'Failed to create post. Please try again.',
       );
     },
   });
@@ -344,11 +345,10 @@ export default function SubmitPage() {
             </button>
             <button
               type="submit"
-              className={`px-6 py-2 rounded-full font-bold text-sm transition-colors border-none ${
-                isValid
+              className={`px-6 py-2 rounded-full font-bold text-sm transition-colors border-none ${isValid
                   ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
                   : 'bg-[#1A282D] text-[#82959b] cursor-not-allowed opacity-80'
-              }`}
+                }`}
               disabled={submitMutation.isPending || !isValid}
             >
               {submitMutation.isPending ? 'Posting...' : 'Post'}
