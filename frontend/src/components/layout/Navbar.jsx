@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import { logout as logoutApi } from '../../api/auth'
 import { searchSubreddits } from '../../api/subreddits'
+import { useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { getUnreadCount } from '../../api/chat'
+import ChatWidget from '../chat/ChatWidget'
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value)
@@ -14,15 +18,26 @@ function useDebounce(value, delay) {
 }
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuthStore()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
-  // Search state
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const user = useAuthStore(s => s.user)
+  const logout = useAuthStore(s => s.logout)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
-  const [searchFocused, setSearchFocused] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const searchRef = useRef(null)
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unreadCount'],
+    queryFn: getUnreadCount,
+    enabled: isAuthenticated,
+    refetchInterval: 10000,
+  })
 
   // Notifications dropdown
   const [showNotifications, setShowNotifications] = useState(false)
@@ -138,7 +153,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors text-sm font-bold text-white cursor-pointer"
                 >
                   <svg className="w-5 h-5 text-[#FF4500]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
+                    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
                   </svg>
                   Ask
                 </button>
@@ -213,11 +228,10 @@ export default function Navbar() {
                 </svg>
               </Link>
 
-              {/* Messages / Chat */}
-              <Link
-                to="/messages"
-                className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white"
-                title="Messages"
+              {/* Chat */}
+              <button
+                className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#2A3236] transition-colors cursor-pointer text-white border-none bg-transparent"
+                onClick={() => setChatOpen(!chatOpen)}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -225,7 +239,12 @@ export default function Navbar() {
                   <circle cx="12" cy="10" r="1" fill="currentColor" />
                   <circle cx="16" cy="10" r="1" fill="currentColor" />
                 </svg>
-              </Link>
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-[#FF4500] text-white text-[10px] font-bold px-1.5 py-[1px] rounded-full border-2 border-[#0B1416]">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
 
               {/* Create */}
               <Link to="/submit" className="flex items-center gap-1.5 px-3 h-10 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer text-white">
@@ -267,8 +286,8 @@ export default function Navbar() {
                     <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
                       <div className="w-14 h-14 rounded-full bg-[#1A282D] flex items-center justify-center mb-3">
                         <svg className="w-7 h-7 text-[#82959b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                         </svg>
                       </div>
                       <p className="text-sm font-bold text-[#d7dadc] mb-1">You're all caught up!</p>
@@ -348,6 +367,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
+      {isAuthenticated && <ChatWidget isOpen={chatOpen} onClose={() => setChatOpen(false)} />}
     </header>
   )
 }

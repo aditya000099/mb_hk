@@ -5,6 +5,7 @@ import PageLayout from '../components/layout/PageLayout'
 import PostCard from '../components/post/PostCard'
 import useAuthStore from '../store/authStore'
 import { getUser, getUserPosts, getUserComments, getSavedItems, updateProfile, uploadMedia } from '../api/users'
+import { toggleFriendRequest, getFriends } from '../api/chat'
 
 export default function UserProfilePage() {
   const { username } = useParams()
@@ -20,6 +21,19 @@ export default function UserProfilePage() {
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['user', username],
     queryFn: () => getUser(username),
+  })
+
+  const { data: friends = [] } = useQuery({
+    queryKey: ['friends'],
+    queryFn: getFriends,
+    enabled: !isMe && !!currentUser && !!profile
+  })
+
+  const friendStatus = friends.find(f => f.friend_id === profile?.id || f.user_id === profile?.id)
+
+  const friendMutation = useMutation({
+    mutationFn: () => toggleFriendRequest(profile.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] })
   })
 
   const { data: posts, isLoading: postsLoading } = useQuery({
@@ -215,12 +229,22 @@ export default function UserProfilePage() {
                     </div>
                   </div>
 
-                  {isMe && (
+                  {isMe ? (
                     <button 
                       onClick={() => setIsEditing(true)}
                       className="w-full py-1.5 rounded-full bg-[#272729] hover:bg-[#343435] text-sm font-bold text-white transition-colors"
                     >
                       Edit Profile
+                    </button>
+                  ) : currentUser && (
+                    <button 
+                      onClick={() => friendMutation.mutate()}
+                      disabled={friendMutation.isPending}
+                      className="w-full mt-2 py-1.5 rounded-full bg-[#FF4500] hover:bg-[#e03d00] text-sm font-bold text-white transition-colors disabled:opacity-50"
+                    >
+                      {friendStatus 
+                        ? (friendStatus.status === 'accepted' ? 'Unfriend' : 'Cancel Request / Pending') 
+                        : 'Add Friend'}
                     </button>
                   )}
                 </>
