@@ -366,3 +366,35 @@ html.light [class*="bg-\\[#0B1416\\]"],
 html.light [class*="bg-\\[#0b1416\\]"] {
   background-color: #f6f7f8 !important;
 }
+
+/* ── Theme-aware PostCard classes ───────────────────────────────
+   These replace hardcoded dark Tailwind hover colors so the
+   post cards look correct in BOTH dark and light mode.
+   ──────────────────────────────────────────────────────────── */
+
+/* Post card wrapper hover */
+.post-card:hover {
+  background-color: #151719;  /* dark mode default */
+}
+html.light .post-card:hover {
+  background-color: #f0f2f4;  /* soft light gray */
+}
+
+/* Action pill buttons (Vote / Comment / Share / Save / Award) */
+.pill-btn {
+  background-color: #272729;
+  color: #d7dadc;
+  transition: background-color 0.1s;
+}
+.pill-btn:hover {
+  background-color: #343435;
+}
+
+/* Light mode pill buttons */
+html.light .pill-btn {
+  background-color: #edeff1;
+  color: #1c1c1c;
+}
+html.light .pill-btn:hover {
+  background-color: #dae0e6;
+}
