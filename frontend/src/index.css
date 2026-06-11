@@ -178,3 +178,60 @@
     @apply bg-brand;
   }
 }
+
+/* ── Light Mode Theme ─────────────────────────────────────────
+   Applied when <html class="light">
+   ──────────────────────────────────────────────────────────── */
+html.light {
+  --color-bg: #dae0e6;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f6f7f8;
+  --color-input-bg: #f6f7f8;
+  --color-text-primary: #1c1c1c;
+  --color-text-secondary: #576f76;
+  --color-text-muted: #576f76;
+  --color-border: #edeff1;
+  --color-hover: rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+html.light body {
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+}
+
+/* Recolor hardcoded dark Tailwind values in light mode */
+html.light [class*="bg-\[#000000\]"],
+html.light [class*="bg-\[#0B1416\]"],
+html.light [class*="bg-\[#0b1416\]"],
+html.light [class*="bg-\[#0f1113\]"],
+html.light [class*="bg-\[#1A282D\]"],
+html.light [class*="bg-\[#1c1c1e\]"],
+html.light [class*="bg-\[#272729\]"] {
+  background-color: var(--color-surface) !important;
+}
+
+html.light [class*="border-\[#2A3236\]"] {
+  border-color: var(--color-border) !important;
+}
+
+html.light [class*="text-\[#d7dadc\]"],
+html.light [class*="text-\[#ffffff\]"],
+html.light [class*="text-white"] {
+  color: var(--color-text-primary) !important;
+}
+
+html.light [class*="text-\[#82959b\]"] {
+  color: var(--color-text-secondary) !important;
+}
+
+html.light header {
+  background-color: #ffffff !important;
+  border-color: var(--color-border) !important;
+}
+
+html.light aside {
+  background-color: #f6f7f8 !important;
+  border-color: var(--color-border) !important;
+}
